@@ -119,52 +119,6 @@ public class SpaceBattlePerformer {
 		      tf2.getSpaceBattleReport().addReports(attackReports2);
 	      }
 	      
-	      
-	      
-	      /* TODO 2019-12-28 testa av och se om detta är rapportert genom den nya report logiken, borde gå att få ut all data där ifrån.
-	      if (tfWinner.getPlayer() != null){
-	          tfWinner.getPlayer().getTurnInfo().addToLatestSpaceBattleReports(report);
-	          Logger.finer("tfWinner.getPlayer().getGovenorName(): " + tfWinner.getPlayer().getGovenorName());
-	      }else{
-	          Logger.finer("tfWinner is neutral");
-	      }
-	      if (tfLoser.getPlayer() != null){
-	          tfLoser.getPlayer().getTurnInfo().addToLatestSpaceBattleReports(report);
-	          Logger.finer("tfLoser.getPlayer().getGovenorName(): " + tfLoser.getPlayer().getGovenorName());
-	      }else{
-	    	  Logger.finer("tfLoser is neutral");
-	      }
-	      tfWinner.addToLatestGeneralReport("Your forces has won a glorious victory.");
-	      tfLoser.addToLatestGeneralReport("Your forces has lost the battle.");
-	      if (tfLoser.getRetreatedShips().size() == 0){
-	      	// the loser dig not retreat with any ships (all destroyed)
-	      	if (tfWinner.getPlayer() != null){
-	      		tfWinner.getPlayer().addToHighlights(planetName,HighlightType.TYPE_BATTLE_WON);
-	      	}
-	      	if (tfLoser.getPlayer() != null){
-	      		tfLoser.getPlayer().addToHighlights(planetName,HighlightType.TYPE_BATTLE_LOST);
-	      	}
-	      }else
-	      if (tfLoser.getDestroyedShips().size() == 0){
-	      	// the loser did not lose any ships (all retreated)
-	      	if (tfWinner.getPlayer() != null){
-	      		tfWinner.getPlayer().addToHighlights(planetName,HighlightType.TYPE_RETREAT_IN_COMBAT_ENEMY);
-	      	}
-	      	if (tfLoser.getPlayer() != null){
-	      		tfLoser.getPlayer().addToHighlights(planetName,HighlightType.TYPE_RETREAT_IN_COMBAT_OWN);
-	      	}
-	      }else{
-	      	// else = partial retreat
-	      	if (tfWinner.getPlayer() != null){
-	      		tfWinner.getPlayer().addToHighlights(planetName,HighlightType.TYPE_BATTLE_WON_PARTIAL_RETREAT);
-	      	}
-	      	if (tfLoser.getPlayer() != null){
-	      		tfLoser.getPlayer().addToHighlights(planetName,HighlightType.TYPE_BATTLE_LOST_PARTIAL_RETREAT);
-	      	}
-	      }
-	      tfWinner.addToLatestGeneralReport("");
-	      tfLoser.addToLatestGeneralReport("");
-	      */
 	      Logger.finer("tfLoser.getStatus(): " + tfLoser.getStatus());
 
 	      /* See method checkGovOnNeutralPlanet description for the removed reason.  
@@ -284,21 +238,17 @@ public class SpaceBattlePerformer {
         	attackerTF.runAway(opponentTF);
         }
         TaskForceSpaceShip tempss = null;
-        int nr = 0;
         int screennr = 0;
         if (attackerTF.onlyFirstLine() & (!attackerTF.isRunningAway())){
           int nrFirstLineShips = attackerTF.getTotalNrShips(false);
           Logger.finer("nrFirstLineShips: " + nrFirstLineShips);
           screennr = Math.abs(r.nextInt())%nrFirstLineShips;
           tempss = attackerTF.getShipAt(false,screennr);
-          nr = attackerTF.getAllSpaceShips().indexOf(tempss);
         }else{
-          nr = Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size();
-          tempss = attackerTF.getAllSpaceShips().get(nr);
+          tempss = attackerTF.getAllSpaceShips().get(Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size());
         }
         
         if (attackerTF.isRunningAway() & (tempss.getSpaceship().getRange().canMove())){ // tempss försöker fly
-      	//attackReport.setWantsToRetreat(true);
       	activeAttackReport.setWantsToRetreat(true);
       	targetAttackReport.setWantsToRetreat(true);
           if (opponentTF.stopsRetreats()){
@@ -306,10 +256,9 @@ public class SpaceBattlePerformer {
 //            opponentTF.addToLatestBattleReport("An enemy " + tempss.getSpaceshipType().getName() + " was stopped by one of your ships that stops retreats, when trying to flee, and forced to fight instead.");
             firingShip = tempss;
           }else{ // tempss flyr
-        	//TODO 2019-12-24 när TaskForce skapas kör galaxy.getRunToPlanet(tempss) eller motsvarande metod och sätt möjligt long och short range planet att fly till. OBS detta kommer ändra spel logik genom att alla skepp som väljer att fly kommer att fly till samma planet. KLART, testa av!
-            //gotAway = tempss.retreat(galaxy.getRunToPlanet(tempss));
-            gotAway = tempss.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(attackerTF, tempss.getSpaceship().getRange()));
-            attackerTF.getAllSpaceShips().remove(nr);
+        	gotAway = tempss.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(attackerTF, tempss.getSpaceship().getRange()));
+            //TODO 2020-02-27 bytte ut attackerTF.getAllSpaceShips().remove(nr); Testa och se att det fungerar, borde gör det
+        	attackerTF.getAllSpaceShips().remove(tempss);
             if (tempss.getSpaceship().isCarrier()){
             	attackerTF.removeSquadronsFromCarrier(tempss.getSpaceship());
             }else
@@ -319,15 +268,11 @@ public class SpaceBattlePerformer {
             if (!gotAway){ // skeppet färstördes då det inte fanns någonstans att fly till
           	// check if this is a carrier and if there are any squadrons located at it
           	// If thats the case, null their carrierLocation
-            	//TODO 2019-12-24 när striden är över gå igenom alla skepp i TF.getDestroyedShips() och kör galaxy.removeShip(tempss); på dem. KLART, testa av!
-              //galaxy.removeShip(tempss);
-              attackerTF.getDestroyedShips().add(tempss);
+            	
+            	attackerTF.getDestroyedShips().add(tempss);
               if (attackerTF.getAllSpaceShips().size() == 0){
             	  attackerTF.setDestroyed();
               }
-              //TODO 2019-12-26 Hantera detta, behöver vi detta? eller kan vi räkna ihop alla skepp nu när de ligger i SpaceBattleAttack
-              //attackerTF.addToLatestLostInSpace(tempss);
-              //opponentTF.addToLatestLostInSpace(tempss);
             }else{ // ship has run away
             	attackerTF.getRetreatedShips().add(tempss);
             }
