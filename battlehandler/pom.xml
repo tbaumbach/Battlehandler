@@ -6,8 +6,9 @@
   <name>Battlehandler</name>
   <description>Handler battles in spaceraze</description>
   <properties>
-  	<maven.compiler.target>1.8</maven.compiler.target>
-    <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>13</maven.compiler.target>
+      <maven.compiler.source>13</maven.compiler.source>
+      <maven.complier.release>13</maven.complier.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
