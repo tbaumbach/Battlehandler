@@ -15,26 +15,16 @@ import spaceraze.util.general.Logger;
 import spaceraze.world.VIP;
 import spaceraze.world.enums.TroopTargetingType;
 import spaceraze.world.enums.TypeOfTroop;
-import spaceraze.world.landbattle.report.LandBattleReport;
 import spaceraze.world.report.landbattle.EnemyTroop;
 import spaceraze.world.report.landbattle.OwnTroop;
 import spaceraze.world.report.landbattle.TroopState;
-import spaceraze.world.report.spacebattle.EnemySpaceship;
-import spaceraze.world.report.spacebattle.OwnSpaceship;
-import spaceraze.world.report.spacebattle.SpaceshipState;
-import spaceraze.world.spacebattle.ReportLevel;
-import spaceraze.world.spacebattle.TaskForce;
-import spaceraze.world.spacebattle.TaskForceSpaceShip;
 
 public class LandBattle {
 	private String planetName;
 	private int planetResistence;
 	private int currentTurn;
-	private LandBattleReport attackingBattleReport;
-	private LandBattleReport defendingBattleReport;
-	//TODO 2020-01-14 flyttade upp dess så att de blir tillgängliga efter striden.
-	LandBattleGroup defBG;
-	LandBattleGroup attBG;
+	private LandBattleGroup defBG;
+	private LandBattleGroup attBG;
 	
 	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistence, int currentTurn){
 		// create battle groups
@@ -57,28 +47,18 @@ public class LandBattle {
     	defBG.modifyLineup(attBG);
     	attBG.modifyLineup(defBG);
     	
-    	if(attBG.getTroops().get(0).getTroop().getOwner() != null) {
-    		
-    	}
-    	
     	Map<String, OwnTroop> attBGOwnTroops = createOwnTroops(attBG.getTroops());
 	    Map<String, EnemyTroop> attBGEnemyTroops = createEnemyTroops(attBG.getTroops());
 	    Map<String, OwnTroop> defBGOwnTroops = createOwnTroops(defBG.getTroops());
 	    Map<String, EnemyTroop> defBGEnemyTroops = createEnemyTroops(defBG.getTroops());
-    	
-	    /*
-    	defendingBattleReport.addOwnInitialForces(defBG);
-    	defendingBattleReport.addEnemyInitialForces(attBG);
-    	attackingBattleReport.addOwnInitialForces(attBG);
-    	attackingBattleReport.addEnemyInitialForces(defBG);
-    	*/
+
 		Logger.finer("Lineup finished");
     	// set unit opposition
     	OpponentHandler opponentHandler = new OpponentHandler();
     	setOpponents(attBG,defBG,opponentHandler);
     	// create master attack list
 		Logger.finer("Creating master attack list");
-    	List<LandBattleAttack> attackList = new LinkedList<LandBattleAttack>();
+    	List<LandBattleAttack> attackList = new LinkedList<>();
     	// add all close combat & support troops to master attack list
     	defBG.addToMasterAttackList(attackList,opponentHandler,currentTurn,attBG,true, planetResistence);
     	printMasterAttackList(attackList);
@@ -99,12 +79,6 @@ public class LandBattle {
 		}
     	// traverse master attack list and perform attacks and counter attacks
 		performAttacks(attackList);
-    	//performAttacks(attackList,opponentHandler,attackingBattleReport,defendingBattleReport);
-    	// summarize result of battle
-    	//defendingBattleReport.addOwnPostBattleForces(defBG);
-    	//defendingBattleReport.addEnemyPostBattleForces(attBG);
-    	//attackingBattleReport.addOwnPostBattleForces(attBG);
-    	//attackingBattleReport.addEnemyPostBattleForces(defBG);
     	// test, write result...
     	Logger.finer("");
     	Logger.finer("Attackers battle report:");
@@ -115,7 +89,6 @@ public class LandBattle {
     	Logger.finer("Defenders battle report:");
     	Logger.finer("------------------------");
     	Logger.finer("");
-    	//Logger.finer(defendingBattleReport.getAsString(ReportLevel.MEDIUM));
     	
     	if(!attBGOwnTroops.isEmpty()) {
     		postBattleUpdateTroop(attBG, attBGOwnTroops);
@@ -142,7 +115,6 @@ public class LandBattle {
 	
 	/**
 	 * Used when testing
-	 * @param attackList
 	 */
 	private void printMasterAttackList(List<LandBattleAttack> attackList){
 		Logger.finer("Master attack printout:");
@@ -154,27 +126,16 @@ public class LandBattle {
 	private void performAttacks(List<LandBattleAttack> attackList){
 		for (LandBattleAttack attack : attackList) {
 			Logger.finer("***** " + attack.toString() + " *****");
-			attack.performAttack(attBG,defBG, getVIPBouns(attBG.getTroops()), getVIPBouns(defBG.getTroops()));
+			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()));
 		}
 	}
 	
-	/*
-	private void performAttacks(List<LandBattleAttack> attackList,OpponentHandler opponentHandler, LandBattleReport attackingBattleReport, LandBattleReport defendingBattleReport){
-		for (LandBattleAttack attack : attackList) {
-			Logger.finer("***** " + attack.toString() + " *****");
-			attack.performAttack(attackingBattleReport,defendingBattleReport, getVIPBouns(attackingTaskForceTroops), getVIPBouns(defendingTaskForceTroops));
-		}
-	}*/
-	
-	private int getVIPBouns(List<TaskForceTroop> taskForceTroops) {
+	private int getVIPBonus(List<TaskForceTroop> taskForceTroops) {
 		//TODO 2020-01-04 Test this out, do the compering work with null value?
-		Stream<VIP> vips = taskForceTroops.stream().filter(taskForceTroop -> !taskForceTroop.getTroop().isDestroyed())
-		.flatMap(taskForceTroop -> taskForceTroop.getVipOnTroop().stream());
-		if(vips.count() > 1) {
-			return vips.map(vip -> vip.getLandBattleGroupAttackBonus()).max(Comparator.comparingInt(null)).orElse(0);
-		}
-		return 0;
-		
+		return taskForceTroops.stream().filter(taskForceTroop -> !taskForceTroop.getTroop().isDestroyed())
+				.flatMap(taskForceTroop -> taskForceTroop.getVipOnTroop().stream())
+				.map(VIP::getLandBattleGroupAttackBonus).mapToInt(v -> v).max().orElse(0);
+
 		// is there any VIPS with group attacks bonus in this Landbattlegroup?
 		/*		
 		List<VIP> groupBonusVIPs = new LinkedList<VIP>();
@@ -217,18 +178,18 @@ public class LandBattle {
     		defBG.addReserveOpponents(attBG,opponentHandler);
     	}
     	// if both size have flankers
-    	if ((attBG.getNrFlankers() > 0) & (defBG.getNrFlankers() > 0)){
+    	if (attBG.getNrFlankers() > 0 && defBG.getNrFlankers() > 0){
     		// match them up randomly until one side have no unopposed flankers left
     		Logger.finer("Flankers vs flankers");
     		addFlankersVsFlankers(attBG,defBG,opponentHandler);
     	}
     	// if one side have unopposed flankers
-    	if ((attBG.getNrUnopposedFlankers(opponentHandler) > 0) & (defBG.getNrSupport() > 0)){
+    	if (attBG.getNrUnopposedFlankers(opponentHandler) > 0 && defBG.getNrSupport() > 0){
     		// any flankers left attack random support troop
     		Logger.finer("Attckar flanker aginst support");
     		addFlankersVsSupport(attBG,defBG,opponentHandler);
     	}else
-    	if ((defBG.getNrUnopposedFlankers(opponentHandler) > 0) & (attBG.getNrSupport() > 0)){
+    	if (defBG.getNrUnopposedFlankers(opponentHandler) > 0 && attBG.getNrSupport() > 0){
     		// any flankers left attack random support troop
     		Logger.finer("Defender flanker aginst support");
     		addFlankersVsSupport(defBG,attBG,opponentHandler);
@@ -250,7 +211,7 @@ public class LandBattle {
     	List<TaskForceTroop> tmpStabbed = stabbedBG.getUnstabbedFirstLine(flankingBG, opponentHandler);
     	List<TaskForceTroop> tmpFlankers = flankingBG.getUnopposedFlankers(opponentHandler);
     	
-    	while ((tmpStabbed.size()) > 0 & (tmpFlankers.size() > 0)){
+    	while (!tmpStabbed.isEmpty() && !tmpFlankers.isEmpty()){
 			
 			Collections.shuffle(tmpStabbed);
 			Collections.shuffle(tmpFlankers);
@@ -293,7 +254,7 @@ public class LandBattle {
     		// add up to two flankers against each firstline
         	tmpStabbed = stabbedBG.getMaxOneStabberFirstLine(flankingBG, opponentHandler);
         	tmpFlankers = flankingBG.getUnopposedFlankers(opponentHandler);
-        	while ((tmpStabbed.size()) > 0 & (tmpFlankers.size() > 0)){
+        	while (!tmpStabbed.isEmpty() && !tmpFlankers.isEmpty()){
     			
     			Collections.shuffle(tmpStabbed);
     			Collections.shuffle(tmpFlankers);
@@ -321,6 +282,7 @@ public class LandBattle {
     				}
     				index++;
     			}
+    			//TODO 2020-03-19 vad är det här?  tempTroops används inte, är det tänkt att den ska användas i opponentHandler.addOpponents(tmpFlankers.get(0),tmpStabbed.get(0));
     			if(tempTroop == null){
     				tempTroop = tmpStabbed.get(0);
     			}
@@ -334,7 +296,7 @@ public class LandBattle {
     private void addFlankersVsSupport(LandBattleGroup flankingBG,LandBattleGroup supportBG,OpponentHandler opponentHandler){
     	List<TaskForceTroop> tmpSupport = supportBG.getUnopposedSupport(opponentHandler);
     	List<TaskForceTroop> tmpFlankers = flankingBG.getUnopposedFlankers(opponentHandler);
-    	while ((tmpSupport.size()) > 0 & (tmpFlankers.size() > 0)){
+    	while (!tmpSupport.isEmpty() && !tmpFlankers.isEmpty()){
         	Collections.shuffle(tmpSupport);
         	Collections.shuffle(tmpFlankers);
         	opponentHandler.addOpponents(tmpFlankers.get(0),tmpSupport.get(0));
@@ -345,7 +307,7 @@ public class LandBattle {
     		// add up to two flankers against each support
         	tmpSupport = supportBG.getSupportWithMaxOneOpponent(opponentHandler);
         	tmpFlankers = flankingBG.getUnopposedFlankers(opponentHandler);
-        	while ((tmpSupport.size()) > 0 & (tmpFlankers.size() > 0)){
+        	while (!tmpSupport.isEmpty() && !tmpFlankers.isEmpty()){
             	Collections.shuffle(tmpSupport);
             	Collections.shuffle(tmpFlankers);
         		opponentHandler.addOpponents(tmpFlankers.get(0),tmpSupport.get(0));
@@ -356,7 +318,7 @@ public class LandBattle {
     }
 
 	private void addFlankersVsFlankers(LandBattleGroup attBG,LandBattleGroup defBG, OpponentHandler opponentHandler){
-		while ((attBG.getNrUnopposedFlankers(opponentHandler) > 0) & (defBG.getNrUnopposedFlankers(opponentHandler) > 0)){
+		while (attBG.getNrUnopposedFlankers(opponentHandler) > 0 && defBG.getNrUnopposedFlankers(opponentHandler) > 0){
 			List<TaskForceTroop> attFlankers = attBG.getUnopposedFlankers(opponentHandler);
 			List<TaskForceTroop> defFlankers = defBG.getUnopposedFlankers(opponentHandler);
 			Collections.shuffle(attFlankers);
@@ -439,35 +401,9 @@ public class LandBattle {
     
     private void postBattleUpdateTroop(LandBattleGroup landBattleGroup, Map<String, ? extends TroopState> troops) {
     	landBattleGroup.getTroops().stream().map(TaskForceTroop::getTroop)
-		.forEach(troop -> {
-				troops.get(troop.getUniqueName()).setPostBattleHitpoints(troop.getCurrentStrength());
-			});
-	}
-    /*
-	public LandBattleReport getAttackingBattleReport() {
-		return attackingBattleReport;
-	}
-	
-	public String getAttackingSummary(){
-		return getAttackingBattleReport().getSummary();
+		.forEach(troop -> troops.get(troop.getUniqueName()).setPostBattleHitpoints(troop.getCurrentStrength()));
 	}
 
-	public String getDefendingSummary(){
-		return getDefendingBattleReport().getSummary();
-	}
-
-	public void setAttackingBattleReport(LandBattleReport attackingBattleReport) {
-		this.attackingBattleReport = attackingBattleReport;
-	}
-
-	public LandBattleReport getDefendingBattleReport() {
-		return defendingBattleReport;
-	}
-	
-	public void setDefendingBattleReport(LandBattleReport defendingBattleReport) {
-		this.defendingBattleReport = defendingBattleReport;
-	}
-	*/
 	public LandBattleGroup getDefBG() {
 		return defBG;
 	}

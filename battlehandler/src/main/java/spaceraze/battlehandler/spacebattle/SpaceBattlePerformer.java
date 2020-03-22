@@ -24,6 +24,7 @@ import spaceraze.world.spacebattle.TaskForceSpaceShip;
 public class SpaceBattlePerformer {
 	
 	private InitiativeMethod initMethod = InitiativeMethod.WEIGHTED_1;
+	private static final String FIGHTING = "fighting";
 //	private boolean gameUpdate = false;
 	
 	
@@ -54,12 +55,11 @@ public class SpaceBattlePerformer {
 	       
 	      
 	      Logger.finer("Fighting starts");
-	      String tf1status = "fighting";
-	      String tf2status = "fighting";
+	      String tf1status = FIGHTING;
+	      String tf2status = FIGHTING;
 	      //TODO 2019-12-22, Vad är poängen med Random r = Functions.getRandom() ? nu skickas "r" runt, borde vara samma sak som att använda Functions.getRandom() när den ska användas då den static final.
 	      Random r = Functions.getRandom();
-	      int shootingSide = 0;
-	      TaskForceSpaceShip firingShip = null;
+	      TaskForceSpaceShip firingShip;
 	      // loopa tills ena sidan är "gone"
 	      while (stillFighting(tf1status, tf2status)){
 	      	Logger.finest("In battle loop: " + tf1status + " " + tf2status);
@@ -68,9 +68,8 @@ public class SpaceBattlePerformer {
 	      	attackReports1.add(attackReport1);
 	    	SpaceBattleAttack attackReport2 = new SpaceBattleAttack();
 	    	attackReports2.add(attackReport2);
-	      	
-	        shootingSide = getShootingSide(tf1,tf2,r);
-	        if (shootingSide == 1){
+
+	        if (getShootingSide(tf1,tf2,r) == 1){
 	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2); // returnerar null om ett skepp flyr istället för att skjuta
 	          if (firingShip != null){
 	        	  Logger.finest("firingShip: " + firingShip.getSpaceship().getName() + " ");
@@ -81,7 +80,7 @@ public class SpaceBattlePerformer {
 	          if (firingShip != null){ // tf2 är beskjutet
 	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2);
 	          }else{   // om inget skepp returneras betyder det att tf1 håller på att retirera
-	            tf2status = "fighting";
+	            tf2status = FIGHTING;
 	          }
 	        }else{
 	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1);
@@ -89,7 +88,7 @@ public class SpaceBattlePerformer {
 	          if (firingShip != null){ // tf1 är beskjutet
 	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1);
 	          }else{   // om inget skepp returneras betyder det att tf2 håller på att retirera
-	            tf1status = "fighting";
+	            tf1status = FIGHTING;
 	          }
 	          // räkna hur många skepp som kommer undan?
 	        }
@@ -130,7 +129,10 @@ public class SpaceBattlePerformer {
 	    }
 
 	private boolean stillFighting(String tf1status, String tf2status) {
-		return (!tf1status.equalsIgnoreCase("destroyed")) & (!tf2status.equalsIgnoreCase("destroyed")) & (!tf1status.equalsIgnoreCase("ran away")) & (!tf2status.equalsIgnoreCase("ran away"));
+		return !tf1status.equalsIgnoreCase("destroyed")
+				&& !tf2status.equalsIgnoreCase("destroyed")
+				&& !tf1status.equalsIgnoreCase("ran away")
+				&& !tf2status.equalsIgnoreCase("ran away");
 	}
 	
 	// chansen för att den ena tf:en får skjuta baseras på antalet skepp i resp. flotta samt initiativbonus
@@ -138,7 +140,7 @@ public class SpaceBattlePerformer {
     protected int getShootingSide(TaskForce tf1, TaskForce tf2, Random r){
       int returnValue = 0;
 //      double tf1ratio = (tf1.getNrFirstLineShips()*1.0) / ((tf1.getNrFirstLineShips() + tf2.getNrFirstLineShips()*1.0));
-      double tf1ratio = getInitRatio(tf1,tf2,r);
+      double tf1ratio = getInitRatio(tf1,tf2);
 //      double tf1ratio = (tf1.getRelativeSize()*1.0) / ((tf1.getRelativeSize() + tf2.getRelativeSize()*1.0));
 //      int tf1initBonus = tf1.getTotalInitBonus() - tf2.getTotalInitBonus();
       int tf1initBonus = getInitBonusTotal(tf1,tf2);
@@ -196,13 +198,11 @@ public class SpaceBattlePerformer {
         return tf1initBonus - tf2initBonus;
       }
     
-    protected double getInitRatio(TaskForce tf1, TaskForce tf2, Random r){
-    	InitiativeMethod initMethod = this.initMethod;
+    protected double getInitRatio(TaskForce tf1, TaskForce tf2){
     	double tf1ratio = 0.0d;
     	if (initMethod == InitiativeMethod.WEIGHTED){
     		Logger.finer("tf1.getRelativeSize(): " + tf1.getRelativeSize());
     		Logger.finer("tf2.getRelativeSize(): " + tf2.getRelativeSize());
-//    		tf1ratio = (tf1.getRelativeSize()*1.0) / ((tf1.getRelativeSize() + tf2.getRelativeSize()*1.0));
     		tf1ratio = getWeightedRatio(0,tf1.getRelativeSize(),tf2.getRelativeSize());
     	}else
        	if (initMethod == InitiativeMethod.WEIGHTED_1){
@@ -215,7 +215,7 @@ public class SpaceBattlePerformer {
        		tf1ratio = getWeightedRatio(3,tf1.getRelativeSize(),tf2.getRelativeSize());
        	}else
     	if (initMethod == InitiativeMethod.LINEAR){
-    		tf1ratio = (tf1.getTotalNrFirstLineShips()*1.0) / ((tf1.getTotalNrFirstLineShips() + tf2.getTotalNrFirstLineShips()*1.0));
+    		tf1ratio = (tf1.getTotalNrFirstLineShips()*1.0) / (tf1.getTotalNrFirstLineShips() + tf2.getTotalNrFirstLineShips()*1.0);
     	}else
        	if (initMethod == InitiativeMethod.FIFTY_FIFTY){
        		tf1ratio = 0.5d;
@@ -226,62 +226,49 @@ public class SpaceBattlePerformer {
     protected double getWeightedRatio(double base, double tf1RelSize, double tf2RelSize){
     	double tf1RelSizeMod = tf1RelSize + base;
     	double tf2RelSizeMod = tf2RelSize + base;
-		double tf1ratio = tf1RelSizeMod / (tf1RelSizeMod + tf2RelSizeMod);
-		return tf1ratio;
+		return tf1RelSizeMod / (tf1RelSizeMod + tf2RelSizeMod);
     }
     
     public TaskForceSpaceShip getFiringShip(TaskForce attackerTF, TaskForce opponentTF, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport){
     	
-    	TaskForceSpaceShip firingShip = null;
-        boolean gotAway = false;
+    	TaskForceSpaceShip firingShip ;
         if (!attackerTF.isRunningAway()){
         	attackerTF.runAway(opponentTF);
         }
-        TaskForceSpaceShip tempss = null;
-        int screennr = 0;
-        if (attackerTF.onlyFirstLine() & (!attackerTF.isRunningAway())){
+        if (attackerTF.onlyFirstLine() && !attackerTF.isRunningAway()){
           int nrFirstLineShips = attackerTF.getTotalNrShips(false);
           Logger.finer("nrFirstLineShips: " + nrFirstLineShips);
-          screennr = Math.abs(r.nextInt())%nrFirstLineShips;
-          tempss = attackerTF.getShipAt(false,screennr);
+			int screennr = Math.abs(r.nextInt())%nrFirstLineShips;
+			firingShip = attackerTF.getShipAt(false,screennr);
         }else{
-          tempss = attackerTF.getAllSpaceShips().get(Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size());
+			firingShip = attackerTF.getAllSpaceShips().get(Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size());
         }
         
-        if (attackerTF.isRunningAway() & (tempss.getSpaceship().getRange().canMove())){ // tempss försöker fly
+        if (attackerTF.isRunningAway() && firingShip.getSpaceship().getRange().canMove()){ // tempss försöker fly
       	activeAttackReport.setWantsToRetreat(true);
       	targetAttackReport.setWantsToRetreat(true);
-          if (opponentTF.stopsRetreats()){
-//            addToLatestBattleReport("Your ship " + tempss.getName() + " could not retreat due to an enemy ship that stops retreats.");
-//            opponentTF.addToLatestBattleReport("An enemy " + tempss.getSpaceshipType().getName() + " was stopped by one of your ships that stops retreats, when trying to flee, and forced to fight instead.");
-            firingShip = tempss;
-          }else{ // tempss flyr
-        	gotAway = tempss.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(attackerTF, tempss.getSpaceship().getRange()));
-            //TODO 2020-02-27 bytte ut attackerTF.getAllSpaceShips().remove(nr); Testa och se att det fungerar, borde gör det
-        	attackerTF.getAllSpaceShips().remove(tempss);
-            if (tempss.getSpaceship().isCarrier()){
-            	attackerTF.removeSquadronsFromCarrier(tempss.getSpaceship());
+          if (!opponentTF.stopsRetreats()){ // tempss flyr
+			  boolean gotAway = firingShip.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(attackerTF, firingShip.getSpaceship().getRange()));
+        	attackerTF.getAllSpaceShips().remove(firingShip);
+            if (firingShip.getSpaceship().isCarrier()){
+            	attackerTF.removeSquadronsFromCarrier(firingShip.getSpaceship());
             }else
-            if (tempss.getSpaceship().isSquadron()){
-          	  tempss.getSpaceship().setCarrierLocation(null);
+            if (firingShip.getSpaceship().isSquadron()){
+				firingShip.getSpaceship().setCarrierLocation(null);
             }
             if (!gotAway){ // skeppet färstördes då det inte fanns någonstans att fly till
           	// check if this is a carrier and if there are any squadrons located at it
           	// If thats the case, null their carrierLocation
             	
-            	attackerTF.getDestroyedShips().add(tempss);
-              if (attackerTF.getAllSpaceShips().size() == 0){
+            	attackerTF.getDestroyedShips().add(firingShip);
+              if (attackerTF.getAllSpaceShips().isEmpty()){
             	  attackerTF.setDestroyed();
               }
             }else{ // ship has run away
-            	attackerTF.getRetreatedShips().add(tempss);
+            	attackerTF.getRetreatedShips().add(firingShip);
             }
           }
-          firingShip = tempss;
-        } else{
-          firingShip = tempss;
         }
-        //attackReport.setAttackingShip(tempss);
         
         activeAttackReport.setSpaceshipAttack(new OwnSpaceshipAttack(firingShip.getSpaceship().getName(), 
         		firingShip.getSpaceship().getTypeName(), 
@@ -293,26 +280,7 @@ public class SpaceBattlePerformer {
         //Return null  if the ship is destroyed or retreating.
         return attackerTF.getDestroyedShips().contains(firingShip) || firingShip.getSpaceship().getRetreatingTo() != null ? null : firingShip;
       }
-    
-    /*
-    private spaceraze.world.report.SpaceBattleReport createReport(TaskForce ownTaskForce, TaskForce enemyTaskForce) {
-    	if(ownTaskForce.getPlayer() == null) { // no player is the same as Neutral or a simulation.
-    		return null;
-    	}
-		List<OwnSpaceship> ownSpaceships = new ArrayList<>();
-		Stream.concat(ownTaskForce.getAllSpaceShips().stream(), Stream.concat(ownTaskForce.getRetreatedShips().stream(), ownTaskForce.getDestroyedShips().stream()))
-		.map(TaskForceSpaceShip::getSpaceship).forEach(ship -> ownSpaceships.add(new OwnSpaceship(ship.getName(), ship.getType().getName(), ship.getScreened(), (ship.getCurrentDc() / ship.getHullStrength()) * 100)));
-		//ownTaskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship).forEach(ship -> ownSpaceships.add(new OwnSpaceship(ship.getName(), ship.getType().getName(), ship.getScreened(), (ship.getCurrentDc() / ship.getHullStrength()) * 100)));
-		List<EnemySpaceship> enemySpaceships = new ArrayList<>();
-		//enemyTaskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship).forEach(ship -> enemySpaceships.add(new EnemySpaceship(ship.getType().getName(), ship.getScreened(), (ship.getCurrentDc() / ship.getHullStrength()) * 100)));
-		Stream.concat(enemyTaskForce.getAllSpaceShips().stream(), Stream.concat(enemyTaskForce.getRetreatedShips().stream(), enemyTaskForce.getDestroyedShips().stream()))
-		.map(TaskForceSpaceShip::getSpaceship).forEach(ship -> enemySpaceships.add(new EnemySpaceship(ship.getType().getName(), ship.getScreened(), (ship.getCurrentDc() / ship.getHullStrength()) * 100)));
-		
-		String enemyName = enemyTaskForce.getPlayer() == null ? null : enemyTaskForce.getPlayer().getGovenorName();
-		String enemyFaction = enemyTaskForce.getPlayer() == null ? null : enemyTaskForce.getPlayer().getFactionName();
-		return new spaceraze.world.report.SpaceBattleReport(ownSpaceships, enemySpaceships, enemyName, enemyFaction);
-		
-	}*/
+
     
     private spaceraze.world.report.spacebattle.SpaceBattleReport createReport(TaskForce ownTaskForce, TaskForce enemyTaskForce, Collection<OwnSpaceship> ownSpaceships, Collection<EnemySpaceship> enemySpaceships) {
     	if(ownTaskForce.getPlayerName() == null) { // no player is the same as Neutral or a simulation.

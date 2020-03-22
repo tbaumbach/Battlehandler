@@ -11,15 +11,11 @@ import java.util.stream.Collectors;
 import spaceraze.battlehandler.spacebattle.SpaceBattlePerformer;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Map;
-import spaceraze.world.Planet;
 import spaceraze.world.Spaceship;
 import spaceraze.world.SpaceshipType;
 import spaceraze.world.VIP;
 import spaceraze.world.spacebattle.TaskForce;
 import spaceraze.world.spacebattle.TaskForceSpaceShip;
-//import sr.server.GalaxyCreator;
-//import sr.server.GalaxyUpdater;
 
 /**
  * @author WMPABOD
@@ -40,13 +36,10 @@ public class BattleSim extends Thread {
 	private int totalCombatNr = 500;
 	private static int maximumNrShips = 1000;
 	private static int sleep = 0;
-	// private String gameWorldName;
-	private final String TF1HOMEPLANET_NAME = "tf1home";
-	private final String TF2HOMEPLANET_NAME = "tf2home";
-	private final String BATTLEPLANET_NAME = "battleplanet";
 	private BattleSimListener battleSimListener;
 	private GameWorld gameWorld;
-	private String tf1ships, tf2ships;
+	private String tf1ships;
+	private String tf2ships;
 
 	public BattleSim(BattleSimListener aBattleSimListener, GameWorld aGameWorld) {
 		this.battleSimListener = aBattleSimListener;
@@ -79,25 +72,24 @@ public class BattleSim extends Thread {
 			if (damaged > 0) {
 				ss.setDamage(damaged);
 			}
-			tf.addSpaceship(new TaskForceSpaceShip(ss, createSpaceshipVips(tf, gameWorld, vipNames)));
+			tf.addSpaceship(new TaskForceSpaceShip(ss, createSpaceshipVips(gameWorld, vipNames)));
 		} else {
 			message = "Cannot find shiptype with name: " + typeName;
 		}
 		return message;
 	}
 	
-	private static List<VIP> createSpaceshipVips(TaskForce tf, GameWorld gameWorld, List<String> vipNames) {
-		List<VIP> Vips = vipNames.stream().map(vipName -> {
-			VIP tempVIP = VIP.getNewVIPshortName(vipName, gameWorld) != null ? VIP.getNewVIPshortName(vipName, gameWorld) : VIP.getNewVIP(vipName, gameWorld);
-			return tempVIP;
-		}).collect(Collectors.toList());
-		return Vips;
+	private static List<VIP> createSpaceshipVips(GameWorld gameWorld, List<String> vipNames) {
+		return vipNames.stream()
+				.map(vipName -> VIP.getNewVIPshortName(vipName, gameWorld) != null
+						? VIP.getNewVIPshortName(vipName, gameWorld) : VIP.getNewVIP(vipName, gameWorld))
+				.collect(Collectors.toList());
 	}
 	
 	private static String addShips(TaskForce tf, GameWorld gameWorld, String ships) {
 		StringTokenizer st = new StringTokenizer(ships, ";");
 		String message = null;
-		while (st.hasMoreTokens() & (message == null)) {
+		while (st.hasMoreTokens() && message == null) {
 			String token = null;
 			try {
 				String aShip = st.nextToken();
@@ -108,7 +100,7 @@ public class BattleSim extends Thread {
 				if (multipleShipsEnd > -1) {
 					// multiple instances of ships should be created
 					String nrString = aShip.substring(1, multipleShipsEnd);
-					aShip = aShip.substring(multipleShipsEnd + 1, aShip.length());
+					aShip = aShip.substring(multipleShipsEnd + 1);
 					Logger.finer("nrString: " + nrString);
 					nrShips = Integer.parseInt(nrString);
 				}
@@ -118,7 +110,7 @@ public class BattleSim extends Thread {
 				int techBonus = 0;
 				int kills = 0;
 				int damaged = 0;
-				List<String> vipNames = new ArrayList<String>();
+				List<String> vipNames = new ArrayList<>();
 				if (otherAbilitiesStart > -1) {
 					// vips/tech exist
 					String oaTemp = aShip.substring(otherAbilitiesStart + 1, aShip.length() - 1);
@@ -172,6 +164,7 @@ public class BattleSim extends Thread {
 		start();
 	}
 
+	@Override
 	public void run() {
 		simulateBattles();
 		battleSimListener.battleSimFinished();
@@ -192,21 +185,6 @@ public class BattleSim extends Thread {
 			if ((i % 100) == 0) { // progress count
 				Logger.finest("# " + i + "/" + totalCombatNr);
 			}
-			// create galaxy
-			//GalaxyCreator gc = new GalaxyCreator();
-			//String faction1 = ((Faction) gameWorld.getFactions().get(0)).getName();
-			//String faction2 = ((Faction) gameWorld.getFactions().get(1)).getName();
-			//Galaxy g = gc.createGalaxy("battleSimGame", battleSimMap, 3, gameWorld);
-			// create galaxyUpdater
-			//GalaxyUpdater gu = new GalaxyUpdater(g); // testar utan galaxy-instans
-			// create planets
-			//Planet battlePlanet = g.findPlanet(BATTLEPLANET_NAME);
-			//Planet homePlanet1 = g.findPlanet(TF1HOMEPLANET_NAME);
-			//Planet homePlanet2 = g.findPlanet(TF2HOMEPLANET_NAME);
-			// create players
-			//Player player1 = new Player("Player1", "pass", g, "Gov1", faction1, homePlanet1);
-			//Player player2 = new Player("Player2", "pass", g, "Gov2", faction2, homePlanet2);
-			// create the task forces
 			TaskForce tf1 = new TaskForce(null, null);
 			TaskForce tf2 = new TaskForce(null, null);
 			// add spaceships to task forces
@@ -246,31 +224,18 @@ public class BattleSim extends Thread {
 		Logger.finer("ships1: " + ships1);
 		Logger.finer("ships2: " + ships2);
 		Logger.setDoOutput(false);
-		String message = null;
-		// create galaxy
-		//GalaxyCreator gc = new GalaxyCreator();
-		//String faction1 = ((Faction) gameWorld.getFactions().get(0)).getName();
-		//String faction2 = ((Faction) gameWorld.getFactions().get(1)).getName();
-		//Galaxy g = gc.createGalaxy("battleSimGame", battleSimMap, 3, gameWorld);
-		// create planets
-		//Planet battlePlanet = g.findPlanet(BATTLEPLANET_NAME);
-		//Planet homePlanet1 = g.findPlanet(TF1HOMEPLANET_NAME);
-		//Planet homePlanet2 = g.findPlanet(TF2HOMEPLANET_NAME);
-		// create players
-		//Player player1 = new Player("Player1", "pass", g, "Gov1", faction1, homePlanet1);
-		//Player player2 = new Player("Player2", "pass", g, "Gov2", faction2, homePlanet2);
-		// create the 1st task force
+		String costMessage;
 		TaskForce tf1 = new TaskForce(null, null);
 		TaskForce tf2 = new TaskForce(null, null);
 		// add spaceships to fleets
 		if ((ships1 == null) || (ships1.equals(""))) {
-			message = "No ships in fleet A";
+			costMessage = "No ships in fleet A";
 		} else if ((ships2 == null) || (ships2.equals(""))) {
-			message = "No ships in fleet B";
+			costMessage = "No ships in fleet B";
 		} else {
-			message = addShips(tf1, gameWorld, ships1);
-			if (message == null) {
-				message = addShips(tf2, gameWorld, ships2);
+			costMessage = addShips(tf1, gameWorld, ships1);
+			if (costMessage == null) {
+				costMessage = addShips(tf2, gameWorld, ships2);
 			}
 		}
 		// count # participating ships
@@ -279,35 +244,22 @@ public class BattleSim extends Thread {
 		Logger.finer("totalShipCount: " + totalShipCount);
 		Logger.finer("maximumNrShips: " + maximumNrShips);
 		if (totalShipCount > maximumNrShips) {
-			message = "Total ship count exceeds maximum (" + totalShipCount + " > " + maximumNrShips + ")";
+			costMessage = "Total ship count exceeds maximum (" + totalShipCount + " > " + maximumNrShips + ")";
 		}
 		// compute costs (once)
 		BattleSimTfCosts costs = new BattleSimTfCosts();
-		if (message == null) {
+		if (costMessage == null) {
 			costs.setTf1CostBuy(tf1.getTotalCostBuy());
 			costs.setTf2CostBuy(tf2.getTotalCostBuy());
 			costs.setTf1CostSupply(tf1.getTotalCostSupply());
 			costs.setTf2CostSupply(tf2.getTotalCostSupply());
 		} else {
-			costs.setMessage(message);
+			costs.setMessage(costMessage);
 		}
 		Logger.setDoOutput(true);
 		Logger.finer("getTfCosts finished");
-		Logger.fine("Message: " + message);
+		Logger.fine("Message: " + costMessage);
 		return costs;
-	}
-
-	private Map createMap() {
-		Map newMap = new Map();
-		Planet tf1Homeplanet = new Planet(-10, 0, 0, TF1HOMEPLANET_NAME, 7, 3, true, true);
-		Planet tf2Homeplanet = new Planet(+10, 0, 0, TF2HOMEPLANET_NAME, 7, 3, true, true);
-		Planet battlePlanet = new Planet(0, 0, 0, BATTLEPLANET_NAME, 5, 5, false, true);
-		newMap.addNewPlanet(tf1Homeplanet);
-		newMap.addNewPlanet(tf2Homeplanet);
-		newMap.addNewPlanet(battlePlanet);
-		newMap.addNewConnection(tf1Homeplanet, battlePlanet, false);
-		newMap.addNewConnection(tf2Homeplanet, battlePlanet, false);
-		return newMap;
 	}
 
 	public String getTf1wins() {

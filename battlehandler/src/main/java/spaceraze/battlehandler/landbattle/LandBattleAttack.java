@@ -6,7 +6,6 @@ import java.util.List;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.enums.LandBattleAttackType;
-import spaceraze.world.landbattle.report.LandBattleReport;
 
 public abstract class LandBattleAttack {
 	protected LandBattleAttackType attackType;
@@ -25,12 +24,10 @@ public abstract class LandBattleAttack {
 	
 	public abstract void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus);
 	
-	//public abstract void performAttack(LandBattleReport attReport, LandBattleReport defReport, int attVipBonus, int defVipBonus);
-	
 	protected TaskForceTroop getRandomOpponent(){
 		List<TaskForceTroop> okOpponents = getNonDestroyedOpponents();
 		TaskForceTroop foundTroop = null;
-		if (okOpponents.size() > 0){
+		if (!okOpponents.isEmpty()){
 			int randomIndex = Functions.getRandomInt(0, okOpponents.size()-1);
 			foundTroop = okOpponents.get(randomIndex);
 		}

@@ -4,7 +4,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import spaceraze.util.general.Logger;
-import spaceraze.world.Troop;
 import spaceraze.world.enums.BattleGroupPosition;
 import spaceraze.world.enums.LandBattleAttackType;
 
@@ -12,14 +11,14 @@ public class OpponentHandler {
 	List<LandBattleOpponents> opponents;
 
 	public OpponentHandler(){
-		opponents = new LinkedList<LandBattleOpponents>();
+		opponents = new LinkedList<>();
 	}
 	
 	public void addOpponents(TaskForceTroop aTroop, TaskForceTroop bTroop){
 		opponents.add(new LandBattleOpponents(aTroop,bTroop));
 	}
 	
-	public LandBattleAttackType getFlankerAttackType(TaskForceTroop aTroop, BattleGroupPosition aPosition, List<TaskForceTroop> opponentList, LandBattleGroup otherBattleGroup){
+	public LandBattleAttackType getFlankerAttackType(List<TaskForceTroop> opponentList, LandBattleGroup otherBattleGroup){
 		LandBattleAttackType anAttackType = null;
 		TaskForceTroop opposingTroop = opponentList.get(0); // assuming there are only one opponent, should be correct for flankers
 		BattleGroupPosition opposingPosition = otherBattleGroup.getPosition(opposingTroop);
@@ -41,7 +40,7 @@ public class OpponentHandler {
 	public boolean noOpponent(TaskForceTroop aTroop){
 		boolean found = false;
 		int counter = 0;
-		while (!found & (counter < opponents.size())){
+		while (!found && counter < opponents.size()){
 			LandBattleOpponents anOpponents = opponents.get(counter);
 			if (anOpponents.getContain(aTroop)){
 				found = true;
@@ -56,7 +55,7 @@ public class OpponentHandler {
     	Logger.finer("maxOneOpponent: " + aTroop.getTroop().getUniqueShortName());
 		int found = 0;
 		int counter = 0;
-		while ((found < 2) & (counter < opponents.size())){
+		while (found < 2 && counter < opponents.size()){
 	    	Logger.finer("found=" + found + " counter=" + counter);
 			LandBattleOpponents anOpponents = opponents.get(counter);
 			if (anOpponents.getContain(aTroop)){

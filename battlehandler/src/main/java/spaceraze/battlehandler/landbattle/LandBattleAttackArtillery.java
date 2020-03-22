@@ -76,40 +76,6 @@ public class LandBattleAttackArtillery extends LandBattleAttack {
 		}
 	}
 
-	/*
-	@Override
-	public void performAttack(LandBattleReport attReport, LandBattleReport defReport, int vipBonus, int defVipBonus) {
-		if (attacker.getTroop().isDestroyed()){
-			Logger.finer("Attacker already destroyed");
-		}else{
-			TaskForceTroop targetTroop = getRandomOpponent();
-			if (targetTroop == null){
-				Logger.finer("All opponents destroyed");
-			}else{
-				Logger.finer("targetTroop: " + targetTroop.getTroop().getUniqueShortName());
-				int multiplier = Functions.getRandomInt(1, 20);
-				Logger.finer("artMultiplier: " + multiplier);
-				
-				int attVIPBonus = vipBonus;
-				if(defender){
-					attVIPBonus = defVipBonus;
-				}
-				
-				int actualDamage = attacker.getTroop().getArtilleryActualDamage(multiplier,defender,resistance, attVIPBonus);
-				String result = targetTroop.getTroop().hit(actualDamage, true, !defender, resistance);
-				Logger.finer(result);
-				if (targetTroop.getTroop().isDestroyed()){
-					attacker.getTroop().addKill();
-					//TODO 2020-01-05 Moved to GalaxyUpdater, the troop will be removed from galaxy after the fight is done. Borde inte den döda truppen ha lagt till i LandBattleReport.postBattleSurvivingOwnTroops eller LandBattleReport.postBattleSurvivingEnemyTroops?
-					//g.removeTroop(targetTroop);
-					attacker.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
-					targetTroop.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
-				}
-				attReport.addAttackResultArtillery(attacker.getTroop(),targetTroop.getTroop(),actualDamage,multiplier,!defender);
-				defReport.addAttackResultArtillery(attacker.getTroop(),targetTroop.getTroop(),actualDamage,multiplier,defender);
-			}
-		}
-	}*/
 
 	@Override
 	public String toString(){

@@ -2,7 +2,8 @@ package spaceraze.battlehandler.landbattle;
 
 
 public class LandBattleOpponents {
-	private TaskForceTroop troop1, troop2;
+	private TaskForceTroop troop1;
+	private TaskForceTroop troop2;
 	
 	public LandBattleOpponents(TaskForceTroop aTroop, TaskForceTroop bTroop){
 		troop1 = aTroop;

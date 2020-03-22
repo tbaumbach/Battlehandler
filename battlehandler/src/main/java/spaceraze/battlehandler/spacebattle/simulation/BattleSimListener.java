@@ -8,8 +8,8 @@ package spaceraze.battlehandler.spacebattle.simulation;
  */
 public interface BattleSimListener {
 	
-	public void battleSimPerformed(BattleSimResult bsr);
+	void battleSimPerformed(BattleSimResult bsr);
 
-	public void battleSimFinished();
+	void battleSimFinished();
 
 }

@@ -29,23 +29,11 @@ public class BattleSimLandResult {
 		return tf1wins;
 	}
 	
-	public void setTf1wins(double tf1wins) {
-		this.tf1wins = tf1wins;
-	}
-	
 	public double getTf2wins() {
 		return tf2wins;
-	}
-	
-	public void setTf2wins(double tf2wins) {
-		this.tf2wins = tf2wins;
 	}
 
 	public double getAverageNrRounds() {
 		return averageNrRounds;
-	}
-
-	public void setAverageNrRounds(double averageNrRounds) {
-		this.averageNrRounds = averageNrRounds;
 	}
 }

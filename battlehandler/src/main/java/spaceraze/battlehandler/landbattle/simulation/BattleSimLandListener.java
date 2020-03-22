@@ -4,8 +4,8 @@ package spaceraze.battlehandler.landbattle.simulation;
 
 public interface BattleSimLandListener {
 	
-	public void battleSimPerformed(BattleSimLandResult bslr);
+	void battleSimPerformed(BattleSimLandResult battleSimLandResult);
 
-	public void battleSimFinished();
+	void battleSimFinished();
 
 }

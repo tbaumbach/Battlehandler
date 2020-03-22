@@ -6,8 +6,10 @@ package spaceraze.battlehandler.spacebattle.simulation;
  *
  */
 public class BattleSimTfCosts {
-	private int tf1CostSupply,tf2CostSupply;
-	private int tf1CostBuy,tf2CostBuy;
+	private int tf1CostSupply;
+	private int tf2CostSupply;
+	private int tf1CostBuy;
+	private int tf2CostBuy;
 	private String message;
 	
 	public String getMessage() {

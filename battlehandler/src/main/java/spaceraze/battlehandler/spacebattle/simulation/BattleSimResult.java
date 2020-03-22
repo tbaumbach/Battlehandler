@@ -27,15 +27,8 @@ public class BattleSimResult {
 		return tf1wins;
 	}
 	
-	public void setTf1wins(double tf1wins) {
-		this.tf1wins = tf1wins;
-	}
-	
 	public double getTf2wins() {
 		return tf2wins;
 	}
-	
-	public void setTf2wins(double tf2wins) {
-		this.tf2wins = tf2wins;
-	}
+
 }

@@ -9,9 +9,9 @@ import spaceraze.world.VIP;
 
 public class TaskForceTroop implements Serializable, Cloneable {
 	static final long serialVersionUID = 1L;
-	
-	final private Troop troop;
-	final private List<VIP> vipOnTroop;
+
+	private final  Troop troop;
+	private final  List<VIP> vipOnTroop;
 	
 	public TaskForceTroop(Troop troop, List<VIP> vipOnTroop) {
 		this.troop = troop;
