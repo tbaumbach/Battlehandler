@@ -57,7 +57,7 @@ public class BattleSimLand extends Thread {
     	/*	if ((aPosition == BattleGroupPosition.FLANKER) & (!tt.isAttackScreened())){
         		message = "Cannot be set as a flanker: " + typeName;
     		}else{*/
-            Troop aTroop = tt.getTroop(null, techBonus, 0);
+            Troop aTroop =  tt.getTroop(null, techBonus, 0, 0);
             Logger.finer("New troop created: " + aTroop.getUniqueShortName());
             if (kills > 0) {
                 aTroop.setKills(kills);
