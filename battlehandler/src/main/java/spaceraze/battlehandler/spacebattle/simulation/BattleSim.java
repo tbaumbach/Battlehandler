@@ -14,8 +14,8 @@ import spaceraze.world.GameWorld;
 import spaceraze.world.Spaceship;
 import spaceraze.world.SpaceshipType;
 import spaceraze.world.VIP;
-import spaceraze.world.spacebattle.TaskForce;
-import spaceraze.world.spacebattle.TaskForceSpaceShip;
+import spaceraze.battlehandler.spacebattle.TaskForce;
+import spaceraze.battlehandler.spacebattle.TaskForceSpaceShip;
 
 /**
  * @author WMPABOD
@@ -63,7 +63,7 @@ public class BattleSim extends Thread {
 			sst = gameWorld.getSpaceshipTypeByShortName(typeName);
 		}
 		if (sst != null) {
-			Spaceship ss = sst.getShip(null, techBonus, 0);
+			Spaceship ss = sst.getShip(null, techBonus, 0, 0);
 			/// TODO 2019-12-07 undersök varför detta är avmarkerat? Var det så att vi gjorde
 			// om och skeppen inte längre kan ändra screened? Testa i klienten och se om det
 			// går att screena ett skepp.

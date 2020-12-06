@@ -11,15 +11,7 @@ import java.util.stream.Stream;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.enums.InitiativeMethod;
-import spaceraze.world.report.EventReport;
-import spaceraze.world.report.spacebattle.EnemySpaceship;
-import spaceraze.world.report.spacebattle.EnemySpaceshipAttack;
-import spaceraze.world.report.spacebattle.OwnSpaceship;
-import spaceraze.world.report.spacebattle.OwnSpaceshipAttack;
-import spaceraze.world.report.spacebattle.SpaceBattleAttack;
-import spaceraze.world.report.spacebattle.SpaceshipState;
-import spaceraze.world.spacebattle.TaskForce;
-import spaceraze.world.spacebattle.TaskForceSpaceShip;
+import spaceraze.world.report.spacebattle.*;
 
 public class SpaceBattlePerformer {
 	
@@ -50,8 +42,8 @@ public class SpaceBattlePerformer {
 	      Map<String, EnemySpaceship> tf1EnemySpaceships = createEnemySpaceship(tf1);
 	      Map<String, OwnSpaceship> tf2OwnSpaceships = createOwnSpaceships(tf2);
 	      Map<String, EnemySpaceship> tf2EnemySpaceships = createEnemySpaceship(tf2);
-	      List<EventReport> attackReports1 = new ArrayList<>();
-	      List<EventReport> attackReports2 = new ArrayList<>();
+	      List<SpaceBattleAttack> attackReports1 = new ArrayList<>();
+	      List<SpaceBattleAttack> attackReports2 = new ArrayList<>();
 	       
 	      
 	      Logger.finer("Fighting starts");
@@ -108,14 +100,14 @@ public class SpaceBattlePerformer {
 	      postBattleUpdateSpaceship(tf1, tf1EnemySpaceships);
 	      if(tf1.getPlayerName() != null) {
 	    	  tf1.setSpaceBattleReport(createReport(tf1, tf2, tf1OwnSpaceships.values(), tf2EnemySpaceships.values()));
-		      tf1.getSpaceBattleReport().addReports(attackReports1);
+		      tf1.getSpaceBattleReport().getSpaceBattleAttacks().addAll(attackReports1);
 	      }
 	      
 	      postBattleUpdateSpaceship(tf2, tf2OwnSpaceships);
 	      postBattleUpdateSpaceship(tf2, tf2EnemySpaceships);
 	      if(tf2.getPlayerName() != null) {
 	    	  tf2.setSpaceBattleReport(createReport(tf2, tf1, tf2OwnSpaceships.values(), tf1EnemySpaceships.values()));
-		      tf2.getSpaceBattleReport().addReports(attackReports2);
+		      tf2.getSpaceBattleReport().getSpaceBattleAttacks().addAll(attackReports2);
 	      }
 	      
 	      Logger.finer("tfLoser.getStatus(): " + tfLoser.getStatus());
@@ -270,12 +262,13 @@ public class SpaceBattlePerformer {
           }
         }
         
-        activeAttackReport.setSpaceshipAttack(new OwnSpaceshipAttack(firingShip.getSpaceship().getName(), 
+        activeAttackReport.setSpaceshipAttack(new SpaceshipAttack(firingShip.getSpaceship().getName(),
         		firingShip.getSpaceship().getTypeName(), 
-        		attackerTF.getDestroyedShips().contains(firingShip), 
+        		attackerTF.getDestroyedShips().contains(firingShip),
+        		true,
         		firingShip.getSpaceship().getRetreatingTo() == null ? null : firingShip.getSpaceship().getRetreatingTo().getName()));
         
-        targetAttackReport.setSpaceshipAttack(new EnemySpaceshipAttack(firingShip.getSpaceship().getTypeName(), attackerTF.getDestroyedShips().contains(firingShip)));
+        targetAttackReport.setSpaceshipAttack(new SpaceshipAttack(firingShip.getSpaceship().getTypeName(), attackerTF.getDestroyedShips().contains(firingShip), false));
         
         //Return null  if the ship is destroyed or retreating.
         return attackerTF.getDestroyedShips().contains(firingShip) || firingShip.getSpaceship().getRetreatingTo() != null ? null : firingShip;
@@ -316,7 +309,7 @@ public class SpaceBattlePerformer {
 		.map(TaskForceSpaceShip::getSpaceship)
 		.forEach(taskForceSpaceShip -> {
 			spaceships.get(taskForceSpaceShip.getUniqueName()).setPostBattleHullState(taskForceSpaceShip.isDestroyed() ? 0 : taskForceSpaceShip.getHullStrength());
-			spaceships.get(taskForceSpaceShip.getUniqueName()).setRetret(taskForceSpaceShip.isRetreating());
+			spaceships.get(taskForceSpaceShip.getUniqueName()).setRetreat(taskForceSpaceShip.isRetreating());
 			});
     	}
 	}

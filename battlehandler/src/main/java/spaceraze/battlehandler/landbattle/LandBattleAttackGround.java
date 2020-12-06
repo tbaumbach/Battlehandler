@@ -5,10 +5,7 @@ import java.util.List;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.enums.LandBattleAttackType;
-import spaceraze.world.report.landbattle.EnemyTroopAttack;
-import spaceraze.world.report.landbattle.EnemyTroopTarget;
-import spaceraze.world.report.landbattle.OwnTroopAttack;
-import spaceraze.world.report.landbattle.OwnTroopTarget;
+import spaceraze.world.report.landbattle.*;
 
 public class LandBattleAttackGround extends LandBattleAttack {
 	private TaskForceTroop attacker;
@@ -75,29 +72,17 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				
 				if(defender) {
 					if(attBG.getReport() != null) {
-						attBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-								new EnemyTroopAttack(attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), false),
-								new OwnTroopTarget(targetTroop.getTroop().getUniqueName(), targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-								attackerActualDamage, defenderActualDamage, attMultiplier, defMultiplier));
+						attBG.getReport().getLandBattleAttacks().add(createLandBattleAttackForDefendingTroop(attacker, targetTroop, attMultiplier, defMultiplier, attackerActualDamage, defenderActualDamage, false));
 					}
 					if(defBG.getReport() != null) {
-						defBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-								new OwnTroopAttack(attacker.getTroop().getUniqueName(), attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), false),
-								new EnemyTroopTarget(targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-								attackerActualDamage, defenderActualDamage, attMultiplier, defMultiplier));
+						defBG.getReport().getLandBattleAttacks().add(getLandBattleAttackForAttackTroop(attacker, targetTroop, attMultiplier, defMultiplier, attackerActualDamage, defenderActualDamage, false));
 					}
 				}else {
 					if(attBG.getReport() != null) {
-						attBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-								new OwnTroopAttack(attacker.getTroop().getUniqueName(), attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), false),
-								new EnemyTroopTarget(targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-								attackerActualDamage, defenderActualDamage, attMultiplier, defMultiplier));
+						attBG.getReport().getLandBattleAttacks().add(getLandBattleAttackForAttackTroop(attacker, targetTroop, attMultiplier, defMultiplier, attackerActualDamage, defenderActualDamage, false));
 					}
 					if(defBG.getReport() != null) {
-						defBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-								new EnemyTroopAttack(attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), false),
-								new OwnTroopTarget(targetTroop.getTroop().getUniqueName(), targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-								attackerActualDamage, defenderActualDamage, attMultiplier, defMultiplier));
+						defBG.getReport().getLandBattleAttacks().add(createLandBattleAttackForDefendingTroop(attacker, targetTroop, attMultiplier, defMultiplier, attackerActualDamage, defenderActualDamage, false));
 					}
 				}
 				
@@ -106,6 +91,50 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				//defReport.addAttackResultGround(attacker.getTroop(), targetTroop.getTroop(), attackerActualDamage, defenderActualDamage, attMultiplier, defMultiplier, defender);
 			}
 		}
+	}
+
+	public static spaceraze.world.report.landbattle.LandBattleAttack getLandBattleAttackForAttackTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery) {
+		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
+				.troopAttack(TroopAttack.builder()
+						.name(attacker.getTroop().getUniqueName())
+						.typeName(attacker.getTroop().getTroopType().getUniqueName())
+						.damageCapacity(attacker.getTroop().getMaxDC())
+						.currentDamageCapacity(attacker.getTroop().getCurrentDC())
+						.artillery(isArtillery)
+						.own(true)
+						.build())
+				.troopTarget(TroopTarget.builder()
+						.typeName(targetTroop.getTroop().getTroopType().getUniqueName())
+						.damageCapacity(targetTroop.getTroop().getMaxDC())
+						.currentDamageCapacity(targetTroop.getTroop().getCurrentDC())
+						.own(false).build())
+				.damage(attackerActualDamage)
+				.counterDamage(defenderActualDamage)
+				.attMultiplier(attMultiplier)
+				.counterMultiplier(defMultiplier)
+				.build();
+	}
+
+	public static spaceraze.world.report.landbattle.LandBattleAttack createLandBattleAttackForDefendingTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery) {
+		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
+				.troopAttack(TroopAttack.builder()
+						.typeName(attacker.getTroop().getTroopType().getUniqueName())
+						.damageCapacity(attacker.getTroop().getMaxDC())
+						.currentDamageCapacity(attacker.getTroop().getCurrentDC())
+						.artillery(isArtillery)
+						.own(false)
+						.build())
+				.troopTarget(TroopTarget.builder()
+						.name(targetTroop.getTroop().getUniqueName())
+						.typeName(targetTroop.getTroop().getTroopType().getUniqueName())
+						.damageCapacity(targetTroop.getTroop().getMaxDC())
+						.currentDamageCapacity(targetTroop.getTroop().getCurrentDC())
+						.own(true).build())
+				.damage(attackerActualDamage)
+				.counterDamage(defenderActualDamage)
+				.attMultiplier(attMultiplier)
+				.counterMultiplier(defMultiplier)
+				.build();
 	}
 
 	@Override

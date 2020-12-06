@@ -5,10 +5,6 @@ import java.util.List;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.enums.LandBattleAttackType;
-import spaceraze.world.report.landbattle.EnemyTroopAttack;
-import spaceraze.world.report.landbattle.EnemyTroopTarget;
-import spaceraze.world.report.landbattle.OwnTroopAttack;
-import spaceraze.world.report.landbattle.OwnTroopTarget;
 
 public class LandBattleAttackArtillery extends LandBattleAttack {
 	private TaskForceTroop attacker;
@@ -49,25 +45,13 @@ public class LandBattleAttackArtillery extends LandBattleAttack {
 				}
 				
 				if(defender) {
-					attBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-							new EnemyTroopAttack(attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), true),
-							new OwnTroopTarget(targetTroop.getTroop().getUniqueName(), targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-							actualDamage, 0, multiplier, 0));
+					attBG.getReport().getLandBattleAttacks().add(LandBattleAttackGround.createLandBattleAttackForDefendingTroop(attacker, targetTroop, multiplier, 0, actualDamage, 0, true));
 					
-					defBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-							new OwnTroopAttack(attacker.getTroop().getUniqueName(), attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), true),
-							new EnemyTroopTarget(targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-							actualDamage, 0, multiplier, 0));
+					defBG.getReport().getLandBattleAttacks().add(LandBattleAttackGround.getLandBattleAttackForAttackTroop(attacker, targetTroop, multiplier, 0, actualDamage, 0 , true));
 				}else {
-					attBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-							new OwnTroopAttack(attacker.getTroop().getUniqueName(), attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), true),
-							new EnemyTroopTarget(targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-							actualDamage, 0, multiplier, 0));
+					attBG.getReport().getLandBattleAttacks().add(LandBattleAttackGround.getLandBattleAttackForAttackTroop(attacker, targetTroop, multiplier, 0, actualDamage, 0 , true));
 					
-					defBG.getReport().addReport(new spaceraze.world.report.landbattle.LandBattleAttack(
-							new EnemyTroopAttack(attacker.getTroop().getTroopType().getUniqueName(), attacker.getTroop().getMaxDC(), attacker.getTroop().getCurrentDC(), true),
-							new OwnTroopTarget(targetTroop.getTroop().getUniqueName(), targetTroop.getTroop().getTroopType().getUniqueName(), targetTroop.getTroop().getMaxDC(), targetTroop.getTroop().getCurrentDC()),
-							actualDamage, 0, multiplier, 0));
+					defBG.getReport().getLandBattleAttacks().add(LandBattleAttackGround.createLandBattleAttackForDefendingTroop(attacker, targetTroop, multiplier, 0, actualDamage, 0, true));
 				}
 				
 				//attReport.addAttackResultArtillery(attacker.getTroop(),targetTroop.getTroop(),actualDamage,multiplier,!defender);

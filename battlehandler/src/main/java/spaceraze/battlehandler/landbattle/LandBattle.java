@@ -401,7 +401,7 @@ public class LandBattle {
     
     private void postBattleUpdateTroop(LandBattleGroup landBattleGroup, Map<String, ? extends TroopState> troops) {
     	landBattleGroup.getTroops().stream().map(TaskForceTroop::getTroop)
-		.forEach(troop -> troops.get(troop.getUniqueName()).setPostBattleHitpoints(troop.getCurrentStrength()));
+		.forEach(troop -> troops.get(troop.getUniqueName()).setPostBattleHitPoints(troop.getCurrentStrength()));
 	}
 
 	public LandBattleGroup getDefBG() {
