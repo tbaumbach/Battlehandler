@@ -334,7 +334,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		activeAttackReport.setDamageNoArmor(damageNoArmor);
 		targetAttackReport.setDamageNoArmor(damageNoArmor);
 		//attackReport.setDamageNoArmor(damageNoArmor);
-		int damageLeftAfterShields = targetShip.getSpaceship().shipShieldsHit(damageNoArmor);
+		int damageLeftAfterShields = shipShieldsHit(targetShip.getSpaceship(), damageNoArmor);
 		activeAttackReport.setDamageLeftAfterShields(damageLeftAfterShields);
 		targetAttackReport.setDamageLeftAfterShields(damageLeftAfterShields);
 		//attackReport.setDamageLeftAfterShields(damageLeftAfterShields);
@@ -390,6 +390,15 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			}
 		}
 		return noShipDamaged;
+	}
+
+	private int shipShieldsHit(Spaceship spaceship, int rawDamage) {
+		int penetrating = 0;
+		if (spaceship.getCurrentShields() < rawDamage) {
+			penetrating = rawDamage - spaceship.getCurrentShields();
+		}
+		Logger.finer( "rawDamage: " + rawDamage + " penetrating: " + penetrating);
+		return penetrating;
 	}
 
 	private TaskForceSpaceShip getMostDamagedShip(boolean screenOnly, GameWorld gameWorld) {
@@ -856,7 +865,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			}
 			// Use totalDamage to show the damage after armor.
 			int totalDamage = shipToBeHit.getSpaceship().getCurrentShields();
-			int damageLeftAfterShields = shipToBeHit.getSpaceship().shipShieldsHit(damageNoArmor);
+			int damageLeftAfterShields = shipShieldsHit(shipToBeHit.getSpaceship(), damageNoArmor);
 			double afterShieldsDamageRatio = (damageLeftAfterShields * 1.0d) / damageNoArmor;
 			Logger.finer("afterShieldsDamageRatio: " + afterShieldsDamageRatio);
 			// gör en sådan funktion och plocka ut skadan. är bara small skada som kanonen

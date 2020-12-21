@@ -70,13 +70,17 @@ public class BattleSim extends Thread {
 			// ss.setScreened(screened);
 			ss.setKills(kills);
 			if (damaged > 0) {
-				ss.setDamage(damaged);
+				setDamage(ss, damaged);
 			}
 			tf.addSpaceship(new TaskForceSpaceShip(ss, createSpaceshipVips(gameWorld, vipNames)));
 		} else {
 			message = "Cannot find shiptype with name: " + typeName;
 		}
 		return message;
+	}
+
+	private static void setDamage(Spaceship spaceship, int damagePercent){
+		spaceship.setCurrentDc((int) Math.round(spaceship.getCurrentDc() * ((100.0-damagePercent)/100.0)));
 	}
 	
 	private static List<VIP> createSpaceshipVips(GameWorld gameWorld, List<String> vipNames) {

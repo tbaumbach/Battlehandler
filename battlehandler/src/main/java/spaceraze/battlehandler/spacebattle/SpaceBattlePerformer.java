@@ -296,7 +296,7 @@ public class SpaceBattlePerformer {
     	Map<String, OwnSpaceship> ownSpaceships = new HashMap<>();
     //	if(taskForce.getPlayerName() != null) { // no player is the same as Neutral or a simulation.
     		taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    			.forEach(ship -> ownSpaceships.put(ship.getKey(), new OwnSpaceship(ship.getName(), SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
+    			.forEach(ship -> ownSpaceships.put(ship.getKey(), new OwnSpaceship(ship.getName(), SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), SpaceshipPureFunctions.getHullStrength(ship))));
     //	}
     	return ownSpaceships;
 	}
@@ -304,7 +304,7 @@ public class SpaceBattlePerformer {
     private Map<String, EnemySpaceship> createEnemySpaceship(TaskForce taskForce, GameWorld gameWorld) {
     	Map<String, EnemySpaceship> enemySpaceships = new HashMap<>();
     	taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    		.forEach(ship -> enemySpaceships.put(ship.getKey(), new EnemySpaceship( SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
+    		.forEach(ship -> enemySpaceships.put(ship.getKey(), new EnemySpaceship( SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), SpaceshipPureFunctions.getHullStrength(ship))));
     	return enemySpaceships;
 	}
     
@@ -313,7 +313,7 @@ public class SpaceBattlePerformer {
     	Stream.concat(taskForce.getAllSpaceShips().stream(), Stream.concat(taskForce.getRetreatedShips().stream(), taskForce.getDestroyedShips().stream()))
 		.map(TaskForceSpaceShip::getSpaceship)
 		.forEach(taskForceSpaceShip -> {
-			spaceships.get(taskForceSpaceShip.getKey()).setPostBattleHullState(taskForceSpaceShip.isDestroyed() ? 0 : taskForceSpaceShip.getHullStrength());
+			spaceships.get(taskForceSpaceShip.getKey()).setPostBattleHullState(taskForceSpaceShip.isDestroyed() ? 0 : SpaceshipPureFunctions.getHullStrength(taskForceSpaceShip));
 			spaceships.get(taskForceSpaceShip.getKey()).setRetreat(taskForceSpaceShip.isRetreating());
 			});
     	}
