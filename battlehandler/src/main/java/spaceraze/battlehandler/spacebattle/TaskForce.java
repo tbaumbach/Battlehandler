@@ -95,7 +95,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	public void reloadSquadrons() {
 		for (Iterator<TaskForceSpaceShip> iter = allShips.iterator(); iter.hasNext();) {
 			Spaceship aShip = iter.next().getSpaceship();
-			if (aShip.isSquadron()) {
+			if (aShip.getSize() == SpaceShipSize.SQUADRON) {
 				if (aShip.getCarrierLocation() != null) {
 					SpaceshipMutator.supplyWeapons(aShip, SpaceShipSize.HUGE);
 				}
@@ -129,7 +129,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
 			if (ss.isScreened() == screened) {
-				if (!ss.isSquadron()) {
+				if (ss.getSize() != SpaceShipSize.SQUADRON) {
 					returnValue++;
 				}
 			}
@@ -142,7 +142,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
 			if (ss.isScreened() == screened) {
-				if (ss.isSquadron()) {
+				if (ss.getSize() == SpaceShipSize.SQUADRON) {
 					returnValue++;
 				}
 			}
@@ -245,7 +245,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	public void removeSquadronsFromCarrier(Spaceship aCarrier) {
 		for (Iterator<TaskForceSpaceShip> iter = allShips.iterator(); iter.hasNext();) {
 			Spaceship aShip = iter.next().getSpaceship();
-			if (aShip.isSquadron()) {
+			if (aShip.getSize() == SpaceShipSize.SQUADRON) {
 				if (aShip.getCarrierLocation() == aCarrier) {
 					aShip.setCarrierLocation(null);
 				}
@@ -680,7 +680,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	public int getVIPInitiativeBonus() {
 		
-		VIP InitBonusVip = allShips.stream().filter(ship -> !ship.getSpaceship().isSquadron()).flatMap(ship -> ship.getVipOnShip().stream())
+		VIP InitBonusVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() != SpaceShipSize.SQUADRON).flatMap(ship -> ship.getVipOnShip().stream())
 		.reduce((vip1, vip2) -> vip1.getInitBonus() > vip2.getInitBonus() ? vip1 : vip2).orElse(null);
 		
 		int initBonusCapitalShip = InitBonusVip == null ? 0 : InitBonusVip.getInitBonus();
@@ -697,7 +697,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			}
 		}*/
 		
-		VIP initBonusSquadronVip = allShips.stream().filter(ship -> ship.getSpaceship().isSquadron())
+		VIP initBonusSquadronVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() == SpaceShipSize.SQUADRON)
 				.filter(ship -> !isScreened(ship.getSpaceship())).flatMap(ship -> ship.getVipOnShip().stream())
 				.reduce((vip1, vip2) -> vip1.getInitSquadronBonus() > vip2.getInitSquadronBonus() ? vip1 : vip2).orElse(null);
 		
@@ -838,7 +838,8 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	//TODO 2019-12-26 Ska den här metoden ligga i TaskForce? behöver vi en taskForce för detta endamål?
 	public void incomingCannonFire(Planet aPlanet, Building aBuilding, Galaxy galaxy) {
 		if (allShips != null) {
-			List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream().filter(ship -> SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getSpaceship().getTypeKey(), galaxy.getGameWorld()).isCapitalShip()).collect(Collectors.toList());
+			List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream()
+					.filter(ship -> SpaceshipPureFunctions.isCapitalShip(ship.getSpaceship(), galaxy.getGameWorld())).collect(Collectors.toList());
 			
 			Logger.finer("shipsPossibleToHit.size(): " + shipsPossibleToHit.size());
 			int randomIndex = Functions.getRandomInt(0, shipsPossibleToHit.size() - 1);
@@ -884,10 +885,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				}
 				// check for destroyed squadrons in the carrier hit
 				List<TaskForceSpaceShip> squadronsDestroyed = new LinkedList<>();
-				if(SpaceshipPureFunctions.isCarrier(shipToBeHit.getSpaceship(), galaxy.getGameWorld())) {
+				if(shipToBeHit.getSpaceship().getSquadronCapacity() > 0) {
 					for (TaskForceSpaceShip aShip : allShips) {
 						Logger.finer("sqd loc: " + aShip.getSpaceship().getCarrierLocation());
-						if (aShip.getSpaceship().isSquadron() & (aShip.getSpaceship().getCarrierLocation() == shipToBeHit.getSpaceship())) { // squadron in a destroyed
+						if (aShip.getSpaceship().getSize() == SpaceShipSize.SQUADRON && (aShip.getSpaceship().getCarrierLocation() == shipToBeHit.getSpaceship())) { // squadron in a destroyed
 																								// carrier
 							squadronsDestroyed.add(aShip);
 						}
@@ -986,7 +987,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	}
 	
 	private boolean vipAllowShipToAttackScreened(VIP vip, Spaceship ship) {
-		return (ship.isSquadron() && vip.isAttackScreenedSquadron()) || (!ship.isSquadron() && vip.isAttackScreenedCapital());
+		return (ship.getSize() == SpaceShipSize.SQUADRON && vip.isAttackScreenedSquadron()) || (ship.getSize() != SpaceShipSize.SQUADRON && vip.isAttackScreenedCapital());
 	}
 	
 	/**

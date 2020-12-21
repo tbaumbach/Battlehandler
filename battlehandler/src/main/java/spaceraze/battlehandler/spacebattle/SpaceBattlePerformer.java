@@ -15,6 +15,7 @@ import spaceraze.util.general.Logger;
 import spaceraze.world.Galaxy;
 import spaceraze.world.GameWorld;
 import spaceraze.world.enums.InitiativeMethod;
+import spaceraze.world.enums.SpaceShipSize;
 import spaceraze.world.report.spacebattle.*;
 
 public class SpaceBattlePerformer {
@@ -246,10 +247,10 @@ public class SpaceBattlePerformer {
           if (!opponentTF.stopsRetreats()){ // tempss flyr
 			  boolean gotAway = SpaceshipMutator.retreat(firingShip.getSpaceship(), TaskForce.getRandomClosestPlanet(attackerTF, SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy)), gameWorld);
         	attackerTF.getAllSpaceShips().remove(firingShip);
-            if (SpaceshipPureFunctions.isCarrier(firingShip.getSpaceship(), gameWorld)){
+            if (firingShip.getSpaceship().getSquadronCapacity() > 0){
             	attackerTF.removeSquadronsFromCarrier(firingShip.getSpaceship());
             }else
-            if (firingShip.getSpaceship().isSquadron()){
+            if (firingShip.getSpaceship().getSize() == SpaceShipSize.SQUADRON){
 				firingShip.getSpaceship().setCarrierLocation(null);
             }
             if (!gotAway){ // skeppet färstördes då det inte fanns någonstans att fly till
@@ -295,7 +296,7 @@ public class SpaceBattlePerformer {
     	Map<String, OwnSpaceship> ownSpaceships = new HashMap<>();
     //	if(taskForce.getPlayerName() != null) { // no player is the same as Neutral or a simulation.
     		taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    			.forEach(ship -> ownSpaceships.put(ship.getUniqueName(), new OwnSpaceship(ship.getName(), SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
+    			.forEach(ship -> ownSpaceships.put(ship.getKey(), new OwnSpaceship(ship.getName(), SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
     //	}
     	return ownSpaceships;
 	}
@@ -303,7 +304,7 @@ public class SpaceBattlePerformer {
     private Map<String, EnemySpaceship> createEnemySpaceship(TaskForce taskForce, GameWorld gameWorld) {
     	Map<String, EnemySpaceship> enemySpaceships = new HashMap<>();
     	taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    		.forEach(ship -> enemySpaceships.put(ship.getUniqueName(), new EnemySpaceship( SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
+    		.forEach(ship -> enemySpaceships.put(ship.getKey(), new EnemySpaceship( SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
     	return enemySpaceships;
 	}
     
@@ -312,8 +313,8 @@ public class SpaceBattlePerformer {
     	Stream.concat(taskForce.getAllSpaceShips().stream(), Stream.concat(taskForce.getRetreatedShips().stream(), taskForce.getDestroyedShips().stream()))
 		.map(TaskForceSpaceShip::getSpaceship)
 		.forEach(taskForceSpaceShip -> {
-			spaceships.get(taskForceSpaceShip.getUniqueName()).setPostBattleHullState(taskForceSpaceShip.isDestroyed() ? 0 : taskForceSpaceShip.getHullStrength());
-			spaceships.get(taskForceSpaceShip.getUniqueName()).setRetreat(taskForceSpaceShip.isRetreating());
+			spaceships.get(taskForceSpaceShip.getKey()).setPostBattleHullState(taskForceSpaceShip.isDestroyed() ? 0 : taskForceSpaceShip.getHullStrength());
+			spaceships.get(taskForceSpaceShip.getKey()).setRetreat(taskForceSpaceShip.isRetreating());
 			});
     	}
 	}
