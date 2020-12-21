@@ -191,7 +191,7 @@ public class BattleSim extends Thread {
 			message = addShips(tf1, gameWorld, tf1ships);
 			message = addShips(tf2, gameWorld, tf2ships);
 			// perform combat
-			(new SpaceBattlePerformer()).performCombat(tf1, tf2, gameWorld.getInitMethod());
+			(new SpaceBattlePerformer()).performCombat(tf1, tf2, gameWorld.getInitMethod(), gameWorld);
 			if (tf1.getStatus().equalsIgnoreCase("fighting")) {
 				countWinsPlayer1++;
 			} else {

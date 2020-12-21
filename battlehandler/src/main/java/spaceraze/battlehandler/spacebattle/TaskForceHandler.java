@@ -1,6 +1,6 @@
 package spaceraze.battlehandler.spacebattle;
 
-import spaceraze.servlethelper.game.VipPureFunctions;
+import spaceraze.servlethelper.game.vip.VipPureFunctions;
 import spaceraze.servlethelper.game.planet.PlanetPureFunctions;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.util.move.FindPlanetCriterion;
@@ -44,7 +44,7 @@ public class TaskForceHandler {
         // vara på en troop.
         List<TaskForceSpaceShip> taskForceSpaceShips = new ArrayList<>();
         SpaceshipPureFunctions.getPlayersSpaceshipsOnPlanet(aPlayer, aPlanet, galaxy.getSpaceships()).stream()
-                .filter(spaceship -> (!spaceship.isCivilian() || includeCivilians))
+                .filter(spaceship -> (!SpaceshipPureFunctions.getSpaceshipTypeByKey(spaceship.getTypeKey(), galaxy.getGameWorld()).isCivilian() || includeCivilians))
                 .forEach(spaceship -> taskForceSpaceShips
                         .add(new TaskForceSpaceShip(spaceship, VipPureFunctions.findAllVIPsOnShip(spaceship, galaxy.getAllVIPs()))));
 

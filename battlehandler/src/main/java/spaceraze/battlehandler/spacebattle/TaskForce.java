@@ -8,11 +8,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 
+import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
+import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
+import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.Building;
@@ -31,7 +33,6 @@ import spaceraze.world.report.spacebattle.*;
  * TaskForce är en tillfällig samling rymdskepp vid en planet och skapas för att
  * hantera konflikter
  */
-//TODO 2020-11-15 should me moved to battlehandler, need to break out all logic methods in entities(in world) using this class
 public class TaskForce implements Serializable, Cloneable { // serialiseras denna någonsin??
 	static final long serialVersionUID = 1L;
 	private static final String FIGHTING = "fighting";
@@ -96,7 +97,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			Spaceship aShip = iter.next().getSpaceship();
 			if (aShip.isSquadron()) {
 				if (aShip.getCarrierLocation() != null) {
-					aShip.supplyWeapons(SpaceShipSize.HUGE);
+					SpaceshipMutator.supplyWeapons(aShip, SpaceShipSize.HUGE);
 				}
 			}
 		}
@@ -127,7 +128,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int returnValue = 0;
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
-			if (ss.getScreened() == screened) {
+			if (ss.isScreened() == screened) {
 				if (!ss.isSquadron()) {
 					returnValue++;
 				}
@@ -140,7 +141,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int returnValue = 0;
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
-			if (ss.getScreened() == screened) {
+			if (ss.isScreened() == screened) {
 				if (ss.isSquadron()) {
 					returnValue++;
 				}
@@ -252,10 +253,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		}
 	}
 
-	public void runAway(TaskForce opponentTF) {
+	public void runAway(TaskForce opponentTF, GameWorld gameWorld) {
 		if (getPlayerName() != null) { // only player taskforces can run away, neutrals never run
 			// kolla om fienden är mer än 4ggr så stort tonnage, försöka fly i så fall
-			if ((4 * getStrength()) < (opponentTF.getStrength())) {
+			if ((4 * getStrength(gameWorld)) < (opponentTF.getStrength(gameWorld))) {
 				runningAway = true;
 			}
 		}
@@ -274,7 +275,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			Logger.finer("index: " + index);
 			TaskForceSpaceShip tempss = allShips.get(index);
 			Logger.finer("tempss: " + tempss.getSpaceship().getName());
-			if (tempss.getSpaceship().getScreened() == screened) {
+			if (tempss.getSpaceship().isScreened() == screened) {
 				if (foundnr == position) {
 					returnss = tempss;
 				} else {
@@ -286,7 +287,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return returnss;
 	}
 
-	public String shipHit(TaskForce tfshooting, TaskForceSpaceShip firingShip, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport) {
+	public String shipHit(TaskForce tfshooting, TaskForceSpaceShip firingShip, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld) {
 		Logger.finest("called, firingShip: " + firingShip.getSpaceship().getName());
 
 		// returnera "destroyed" om inga skepp finns kvar i tf:n
@@ -302,26 +303,26 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		// screenOnly == if true only ships in first lines are counted as possible targets. Perhaps the name should change to onlyFirstline?
 		boolean screenOnly = (!canAttackScreened) && onlyFirstLine();
 				
-		int aimedShotChance = tfshooting.getAimBonus() + 40;
+		int aimedShotChance = tfshooting.getAimBonus(gameWorld) + 40;
 		// int aimedShotChance = tfshooting.getAimBonus();
 		boolean aimedShot = Functions.getD100(aimedShotChance);
 		if (aimedShot) { // the shot will be aimed at the most damaged enemy ship
 			// if none is damaged, the shot will be performed as normal
-			if (noShipDamaged()) {
+			if (noShipDamaged(gameWorld)) {
 				aimedShot = false;
 			} else {
 				// there are at least one damaged ship in the hit TF
-				targetShip = getMostDamagedShip(screenOnly);
+				targetShip = getMostDamagedShip(screenOnly, gameWorld);
 
 			}
 		}
 		// if shot isn't aimed, perform shot as normal, i.e. use target weight etc
 		if (!aimedShot) {
-			int targetingWeight = getTotalTargetingWeight(firingShip.getSpaceship().getTargetingType(), screenOnly);
+			int targetingWeight = getTotalTargetingWeight(SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getTargetingType(), screenOnly);
 			int targetIndex = Math.abs(r.nextInt()) % targetingWeight;
-			targetShip = getTargetedShip(firingShip.getSpaceship().getTargetingType(), targetIndex, screenOnly);
+			targetShip = getTargetedShip(SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getTargetingType(), targetIndex, screenOnly);
 		}
-		if (targetShip.getSpaceship().getScreened() && onlyFirstLine()) {
+		if (targetShip.getSpaceship().isScreened() && onlyFirstLine()) {
 			Logger.severe("Screened ship hit!!! " + targetShip.getSpaceship().getUniqueName() + " aimedShot: " + aimedShot);
 		}
 		nr = allShips.indexOf(targetShip);
@@ -329,7 +330,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int multiplier = getMultiplier(0);
 		//attackReport.setAttMultiplier(multiplier);
 		Logger.finest("multiplier: " + multiplier);
-		int damageNoArmor = firingShip.getSpaceship().getDamageNoArmor(targetShip.getSpaceship(), multiplier);
+		int damageNoArmor = SpaceshipPureFunctions.getDamageNoArmor(firingShip.getSpaceship(), gameWorld, targetShip.getSpaceship(), multiplier);
 		activeAttackReport.setDamageNoArmor(damageNoArmor);
 		targetAttackReport.setDamageNoArmor(damageNoArmor);
 		//attackReport.setDamageNoArmor(damageNoArmor);
@@ -339,10 +340,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		//attackReport.setDamageLeftAfterShields(damageLeftAfterShields);
 		double afterShieldsDamageRatio = (damageLeftAfterShields * 1.0d) / damageNoArmor;
 		Logger.finer("afterShieldsDamageRatio: " + afterShieldsDamageRatio);
-		int actualDamage = firingShip.getSpaceship().getActualDamage(targetShip.getSpaceship(), multiplier, afterShieldsDamageRatio);
+		int actualDamage = SpaceshipMutator.getActualDamage(firingShip.getSpaceship(), gameWorld, targetShip.getSpaceship(), multiplier, afterShieldsDamageRatio);
 		activeAttackReport.setActualDamage(actualDamage);
 		targetAttackReport.setActualDamage(actualDamage);
-		String damagedStatus = targetShip.getSpaceship().shipHit(actualDamage, damageLeftAfterShields, damageNoArmor);
+		String damagedStatus = shipHit(targetShip.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, targetShip.getSpaceship().getOwner() != null ? targetShip.getSpaceship().getOwner().getGalaxy() : null, gameWorld);
 		Logger.finest("multiplier=" + multiplier + " damageNoArmor=" + damageNoArmor + " damageLeftAfterShields="
 				+ damageLeftAfterShields + " afterShieldsDamageRatio=" + afterShieldsDamageRatio + " actualDamage="
 				+ actualDamage + " damagedStatus=" + damagedStatus);
@@ -356,8 +357,8 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			destroyedShips.add(targetShip);
 		}
 		
-		activeAttackReport.setSpaceshipTarget(createSpaceShipTarget(targetShip.getSpaceship(), false));
-		targetAttackReport.setSpaceshipTarget(createSpaceShipTarget(targetShip.getSpaceship(), true));
+		activeAttackReport.setSpaceshipTarget(createSpaceShipTarget(targetShip.getSpaceship(), false, gameWorld));
+		targetAttackReport.setSpaceshipTarget(createSpaceShipTarget(targetShip.getSpaceship(), true, gameWorld));
 		
 		if (allShips.size() == 0) {
 			statusString = "destroyed";
@@ -365,23 +366,24 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return statusString;
 	}
 
-	private SpaceshipTarget createSpaceShipTarget(Spaceship spaceship, boolean isOwn){
+	private SpaceshipTarget createSpaceShipTarget(Spaceship spaceship, boolean isOwn, GameWorld gameWorld){
 		return SpaceshipTarget.builder()
 				.name(isOwn? spaceship.getName() : null)
-				.typeName(spaceship.getTypeName())
+				.typeName(SpaceshipPureFunctions.getSpaceshipTypeByKey(spaceship.getTypeKey(), gameWorld).getName())
 				.currentShield(spaceship.getCurrentShields())
+				.shield(SpaceshipPureFunctions.getShields(spaceship, gameWorld))
 				.currentDamageCapacity(spaceship.getCurrentDc())
 				.damageCapacity(spaceship.getDamageCapacity())
 				.own(isOwn)
 				.build();
 	}
 
-	private boolean noShipDamaged() {
+	private boolean noShipDamaged(GameWorld gameWorld) {
 		boolean noShipDamaged = true;
 		int counter = 0;
 		while ((counter < allShips.size()) & noShipDamaged) {
 			Spaceship tmpss = allShips.get(counter).getSpaceship();
-			if (tmpss.isDamaged()) {
+			if (SpaceshipPureFunctions.isDamaged(tmpss, gameWorld)) {
 				noShipDamaged = false;
 			} else {
 				counter++;
@@ -390,16 +392,16 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return noShipDamaged;
 	}
 
-	private TaskForceSpaceShip getMostDamagedShip(boolean screenOnly) {
+	private TaskForceSpaceShip getMostDamagedShip(boolean screenOnly, GameWorld gameWorld) {
 		TaskForceSpaceShip mostDamagedShip = null;
 		List<TaskForceSpaceShip> allSsClone = allShips.stream().collect(Collectors.toList());
 		Collections.shuffle(allSsClone);
 		for (TaskForceSpaceShip aSpaceship : allSsClone) {
-			if (!screenOnly | !aSpaceship.getSpaceship().getScreened()) { // if screen only, only get ships in screen
+			if (!screenOnly | !aSpaceship.getSpaceship().isScreened()) { // if screen only, only get ships in screen
 				if (mostDamagedShip == null) {
 					mostDamagedShip = aSpaceship;
 				} else {
-					if (aSpaceship.getSpaceship().getDamageLevel() < mostDamagedShip.getSpaceship().getDamageLevel()) {
+					if (SpaceshipPureFunctions.getDamageLevel(aSpaceship.getSpaceship(), gameWorld) < SpaceshipPureFunctions.getDamageLevel(mostDamagedShip.getSpaceship(), gameWorld)) {
 						mostDamagedShip = aSpaceship;
 					}
 				}
@@ -408,10 +410,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return mostDamagedShip;
 	}
 
-	public int getAimBonus() {
+	public int getAimBonus(GameWorld gameWorld) {
 		int totalAimBonus = 0;
 		// get aimBonus from ship and vip
-		totalAimBonus += getSpaceshipAimBonus();
+		totalAimBonus += getSpaceshipAimBonus(gameWorld);
 		VIP aimBonusVip = getAimBonusVIP();
 		if (aimBonusVip != null) {
 			totalAimBonus += aimBonusVip.getAimBonus();
@@ -427,7 +429,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			Logger.finest("in for-loop, ship: " + aShip.getName() + " totalWeight: " + totalWeight);
 			if (screenOnly) {
 				Logger.finer("Screen only!");
-				if (!aShip.getScreened()) {
+				if (!aShip.isScreened()) {
 					totalWeight = totalWeight + targetingType.getTargetingWeight(aShip);
 					Logger.finer("Ship not in screen - adding weight: " + targetingType.getTargetingWeight(aShip));
 				}
@@ -468,7 +470,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			TaskForceSpaceShip currentSpaceship = allShips.get(indexCounter);
 			Logger.finer("currentSpaceship (" + indexCounter + "): " + currentSpaceship.getSpaceship().getUniqueName() + " ("
 					+ indexCounter + ")");
-			if ((!screenOnly) | (!currentSpaceship.getSpaceship().getScreened())) { // if all ships, or if the ship is not screened
+			if ((!screenOnly) | (!currentSpaceship.getSpaceship().isScreened())) { // if all ships, or if the ship is not screened
 				Logger.finer("Ship can be hei");
 				weightCounter = weightCounter + targetingType.getTargetingWeight(currentSpaceship.getSpaceship());
 				Logger.finer("weightCounter: " + weightCounter + " targetIndex: " + targetIndex);
@@ -498,152 +500,6 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return tempRandom;
 	}
 
-	public void chasedAway(TaskForce chasingTF) {
-		Logger.finer("chased TF owner: " + getPlayerName());
-		Logger.finer("chasing TF owner: " + chasingTF.getPlayerName());
-		// Gå igenom alla rymdskepp som ej är skvadroner och gör så de flyr
-		for (int i = allShips.size() - 1; i > -1; i--) {
-			TaskForceSpaceShip ship = allShips.get(i);
-			Logger.finest("ship in loop: " + ship.getSpaceship());
-			if (ship.getSpaceship().getRange().canMove() & !ship.getSpaceship().isSquadron()) {
-
-				// boolean planetExistsToRunTo = tempss.runAway(false);
-				boolean planetExistsToRunTo = ship.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(this, ship.getSpaceship().getRange()));
-
-				if (planetExistsToRunTo) {
-					retreatedShips.add(ship);
-					allShips.remove(ship);
-				}
-				if (!planetExistsToRunTo) {
-					// remove ship from game
-					// tempss.getOwner().getGalaxy().getSpaceships().remove(tempss);
-					// tempss.getOwner().getTurnInfo().addToLatestGeneralReport("Your ship " +
-					// tempss.getName() + " has been scuttled by its crew, when retreating from " +
-					// tempss.getOldLocation().getName() + " last turn, because there was nowhere
-					// they could run to.");
-					// addToLatestLostInSpace(tempss);
-				}
-			}
-		}
-		// iterate through all squadrons and check if they run away in a carrier or by
-		// themselves
-		for (int i = allShips.size() - 1; i > -1; i--) {
-			TaskForceSpaceShip ship = allShips.get(i);
-			if (ship.getSpaceship().isSquadron()) {
-				if (ship.getSpaceship().getCarrierLocation() == null) {
-					if (ship.getSpaceship().getRange().canMove()) {
-						// squadron is on its own, retreats as a capital ship
-
-						boolean planetExistsToRunTo = ship.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(this, ship.getSpaceship().getRange()));
-						if (!planetExistsToRunTo) {
-							// försök lägga till sqd till en flyende carrier som har plats.
-							if (tryAddRetreatedSqdToSomeRetreatedCarrierWithEmptySlots(ship.getSpaceship())) {
-								ship.getSpaceship().squadronInRetreatingCarrier();
-								retreatedShips.add(ship);
-								allShips.remove(ship);
-							}
-
-							// remove ship from game
-							// tempss.getOwner().getGalaxy().getSpaceships().remove(tempss);
-							// tempss.getOwner().getTurnInfo().addToLatestGeneralReport("Your ship " +
-							// tempss.getName() + " has been scuttled by its crew, when retreating from " +
-							// tempss.getOldLocation().getName() + " last turn, because there was nowhere
-							// they could run to.");
-							// addToLatestLostInSpace(tempss);
-						} else {
-							retreatedShips.add(ship);
-							allShips.remove(ship);
-						}
-					} else {
-						// försök lägga till sqd till en flyende carrier som har plats.
-						if (tryAddRetreatedSqdToSomeRetreatedCarrierWithEmptySlots(ship.getSpaceship())) {
-							ship.getSpaceship().squadronInRetreatingCarrier();
-							retreatedShips.add(ship);
-							allShips.remove(ship);
-						}
-					}
-				} else {
-					if (ship.getSpaceship().getCarrierLocation().isRetreating()) {
-						ship.getSpaceship().squadronInRetreatingCarrier();
-						retreatedShips.add(ship);
-						allShips.remove(ship);
-					}
-				}
-			}
-		}
-	}
-
-	private boolean tryAddRetreatedSqdToSomeRetreatedCarrierWithEmptySlots(Spaceship aSpaceship) {
-		
-		Optional<Spaceship> Optional = retreatedShips.stream().map(TaskForceSpaceShip::getSpaceship).filter(ship -> ship.isCarrier())
-		.filter(carrier -> doCarrierHaveEmptySlots(carrier)).findAny(); //.ifPresent(carrier -> aSpaceship.setCarrierLocation(carrier));
-		Optional.ifPresent(carrier -> aSpaceship.setCarrierLocation(carrier));
-		return Optional.isPresent();
-		
-		/*TODO 2019-12-26 Check if this method work, if so remove the old code.
-		for (Spaceship tempSpaceship : retreatedShips) {
-			if (tempSpaceship.isCarrier() && tempSpaceship.getSquadronCapacity() > tempSpaceship.getOwner().getGalaxy()
-					.getNoSquadronsAssignedToCarrier(tempSpaceship)) {
-				aSpaceship.setCarrierLocation(tempSpaceship);
-				return true;
-			}
-		}
-		return false;*/
-	}
-	
-	private boolean doCarrierHaveEmptySlots(Spaceship carrier) {
-		List<TaskForceSpaceShip> tempList = new ArrayList<>(allShips);
-		tempList.addAll(retreatedShips);
-		int numberOfSquadrons = (int)tempList.stream()
-				.map(TaskForceSpaceShip::getSpaceship)
-				.filter(Spaceship::isSquadron)
-				.filter(ship -> ship.getCarrierLocation() == carrier).count();
-		return carrier.getSquadronCapacity() > numberOfSquadrons;
-	}
-	
-	/*TODO 2019-12-26 Ser inte ut att används, frågan är vad den har använts till?
-	public boolean checkAllCanRetreat() {
-		boolean allCanRetreat = true;
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship tempss = allShips.get(i);
-			if (!tempss.getRange().canMove()) {
-				if (!tempss.isSquadron()) {
-					allCanRetreat = false;
-				} else {
-					if (tempss.getCarrierLocation() == null) {
-						allCanRetreat = false;
-					}
-				}
-			}
-		}
-		return allCanRetreat;
-	}*/
-
-	/*TODO 2019-12-26 Ser inte ut att används, frågan är vad den har använts till?
-	public boolean checkNoneCanRetreat() {
-		boolean noneCanRetreat = true;
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship tempss = allShips.get(i);
-			if (tempss.getRange().canMove()) {
-				noneCanRetreat = false;
-			}
-		}
-		return noneCanRetreat;
-	}
-	*/
-
-	/*
-	public Player getPlayer() {
-		return player;
-	}
-	*/
-
-	/*
-	public boolean isPlayer(Player aPlayer) {
-		return player == aPlayer;
-	}
-	*/
-
 	public void addSpaceship(TaskForceSpaceShip ship) {
 		allShips.add(ship);
 	}
@@ -653,21 +509,21 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	 * 
 	 * @return
 	 */
-	public int getStrength() {
+	public int getStrength(GameWorld gameWorld) {
 		int total = 0;
 		for (TaskForceSpaceShip taskForceSpaceShip : allShips) {
 			Spaceship tmpss = taskForceSpaceShip.getSpaceship();
 			total = total + (tmpss.getCurrentShields());
 			total = total + (tmpss.getCurrentDc() / 2);
-			total = total + (tmpss.getActualDamage());
+			total = total + (SpaceshipPureFunctions.getActualDamage(tmpss, gameWorld));
 		}
 		return total;
 	}
 
-	public void restoreShieldsAndCleanDestroyedAndRetreatedLists() {
+	public void restoreShieldsAndCleanDestroyedAndRetreatedLists(GameWorld gameWorld) {
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
-			ss.restoreShields();
+			SpaceshipMutator.restoreShields(ss, gameWorld);
 		}
 		destroyedShips.clear();
 		retreatedShips.clear();
@@ -713,7 +569,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return maxBombardment;
 	}
 
-	public int getMaxPsychWarfare() {
+	public int getMaxPsychWarfare(GameWorld gameWorld) {
 		int maxPsychWarfare = 0;
 		for (int i = 0; i < allShips.size(); i++) {
 			Spaceship ss = allShips.get(i).getSpaceship();
@@ -722,81 +578,6 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			}
 		}
 		return maxPsychWarfare;
-	}
-	/*
-	 * public int getMaxSiegeBonus(){ int maxSiegeBonus = 0; for (int i = 0; i <
-	 * allss.size(); i++){ Spaceship ss =allss.get(i); if (ss.getSiegeBonus() >
-	 * maxSiegeBonus){ maxSiegeBonus = ss.getSiegeBonus(); } } //
-	 * LoggingHandler.finer("taskforce getMaxSiegeBonus: " + maxSiegeBonus); return
-	 * maxSiegeBonus; }
-	 * 
-	 * public boolean getTroops(){ boolean tempTroops = false; for (int i = 0; i <
-	 * allss.size(); i++){ Spaceship ss =allss.get(i); if (ss.getTroops()){
-	 * tempTroops = true; } } return tempTroops; }
-	 */
-
-	// snygga till denna genom att man ser antal på varje typ av skepp istället för
-	// att bara räkna upp alla skepp??
-	// skicka in true om man vill ret. alla screenade skepp, annars (false) ret.
-	// alla icke.screenade skepp
-	public String getOwnParticipatingShipsString() {
-		String returnString = "";
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship ss = allShips.get(i).getSpaceship();
-			if (!returnString.equalsIgnoreCase("")) {
-				returnString = returnString + ", ";
-			}
-			returnString = returnString + ss.getName();
-		}
-		return returnString;
-	}
-
-	// snygga till denna genom att man ser antal på varje typ av skepp istället för
-	// att bara räkna upp alla skepp??
-	// skicka in true om man vill ret. alla screenade skepp, annars (false) ret.
-	// alla icke.screenade skepp
-	public String getOwnParticipatingShipsString(boolean screened) {
-		String returnString = "";
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship ss = allShips.get(i).getSpaceship();
-			if (ss.getScreened() == screened) {
-				if (!returnString.equalsIgnoreCase("")) {
-					returnString = returnString + ", ";
-				}
-				returnString = returnString + ss.getName();
-			}
-		}
-		return returnString;
-	}
-
-	// snygga till denna genom att man ser antal på varje typ av skepp istället för
-	// att bara räkna upp alla skepp??
-	public String getEnemyParticipatingShipsString() {
-		String returnString = "";
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship ss = allShips.get(i).getSpaceship();
-			if (!returnString.equalsIgnoreCase("")) {
-				returnString = returnString + ", ";
-			}
-			returnString = returnString + ss.getSpaceshipType().getName();
-		}
-		return returnString;
-	}
-
-	// snygga till denna genom att man ser antal på varje typ av skepp istället för
-	// att bara räkna upp alla skepp??
-	public String getEnemyParticipatingShipsString(boolean screened) {
-		String returnString = "";
-		for (int i = 0; i < allShips.size(); i++) {
-			Spaceship ss = allShips.get(i).getSpaceship();
-			if (ss.getScreened() == screened) {
-				if (!returnString.equalsIgnoreCase("")) {
-					returnString = returnString + ", ";
-				}
-				returnString = returnString + ss.getSpaceshipType().getName();
-			}
-		}
-		return returnString;
 	}
 
 	public List<TaskForceSpaceShip> getRetreatedShips() {
@@ -812,7 +593,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int i = 0;
 		while ((i < allShips.size()) & (!hasInterdictor)) {
 			Spaceship ss = allShips.get(i).getSpaceship();
-			if (ss.getSpaceshipType().getNoRetreat()) {
+			if (ss.isNoRetreat()) {
 				hasInterdictor = true;
 			} else {
 				i++;
@@ -844,12 +625,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	public int getInitBonus() {
 		
 		int initBonus = allShips.stream().map(TaskForceSpaceShip::getSpaceship)
-				.filter(Spaceship::getInitSupport)
-				.map(ship -> ship.getIncreaseInitiative())
+				.filter(Spaceship::isInitSupport)
+				.map(ship -> SpaceshipPureFunctions.getIncreaseInitiative(ship))
 				.reduce(Integer::max).orElse(0);
 		int initSupportBonus = allShips.stream().map(TaskForceSpaceShip::getSpaceship)
-				.filter(ship -> !ship.getInitSupport())
-				.map(ship -> ship.getIncreaseInitiative())
+				.filter(ship -> !ship.isInitSupport())
+				.map(ship -> SpaceshipPureFunctions.getIncreaseInitiative(ship))
 				.reduce(Integer::max).orElse(0);
 		/* TODO testa av.
 		for (int i = 0; i < allShips.size(); i++) {
@@ -883,8 +664,8 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	}
 
 	// increases the chance to fire against the most damage ship.
-	public int getSpaceshipAimBonus() {
-		return allShips.stream().map(ship -> ship.getSpaceship().getAimBonus()).reduce(Integer::max).get();
+	public int getSpaceshipAimBonus(GameWorld gameWorld) {
+		return allShips.stream().map(ship -> SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getSpaceship().getTypeKey(), gameWorld).getAimBonus()).reduce(Integer::max).get();
 		/*TODO testa av för att sedan ta bort.
 		int tmpAimBonus = 0;
 		for (int i = 0; i < allShips.size(); i++) {
@@ -954,7 +735,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	}
 	
 	private boolean isScreened(Spaceship ship) {
-		return !((onlyFirstLine() && !ship.getScreened()) || !(onlyFirstLine()));
+		return !((onlyFirstLine() && !ship.isScreened()) || !(onlyFirstLine()));
 	}
 
 	public int getVIPInitDefence() {
@@ -1006,7 +787,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	public int getTotalCostSupply() {
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
-		return allShips.stream().map(ship -> ship.getSpaceship().getSpaceshipType().getUpkeep()).reduce((upKeep1, upKeep2) -> upKeep1 + upKeep2).orElse(0);
+		return allShips.stream().map(ship -> ship.getSpaceship().getUpkeep()).reduce((upKeep1, upKeep2) -> upKeep1 + upKeep2).orElse(0);
 		/*
 		int tmpSupply = 0;
 		for (Iterator<Spaceship> iter = allShips.iterator(); iter.hasNext();) {
@@ -1019,7 +800,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	public int getTotalCostBuy() {
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
-		return allShips.stream().map(ship -> ship.getSpaceship().getSpaceshipType().getBuildCost(null)).reduce((cost1, cost2) -> cost1 + cost2).orElse(0);
+		return allShips.stream().map(ship -> ship.getSpaceship().getBuildCost()).reduce((cost1, cost2) -> cost1 + cost2).orElse(0);
 		/*
 		int tmpBuy = 0;
 		for (Iterator<Spaceship> iter = allShips.iterator(); iter.hasNext();) {
@@ -1057,7 +838,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	//TODO 2019-12-26 Ska den här metoden ligga i TaskForce? behöver vi en taskForce för detta endamål?
 	public void incomingCannonFire(Planet aPlanet, Building aBuilding, Galaxy galaxy) {
 		if (allShips != null) {
-			List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream().filter(ship -> ship.getSpaceship().isCapitalShip()).collect(Collectors.toList());
+			List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream().filter(ship -> SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getSpaceship().getTypeKey(), galaxy.getGameWorld()).isCapitalShip()).collect(Collectors.toList());
 			
 			Logger.finer("shipsPossibleToHit.size(): " + shipsPossibleToHit.size());
 			int randomIndex = Functions.getRandomInt(0, shipsPossibleToHit.size() - 1);
@@ -1085,7 +866,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			// klarade av hela skadan. om damageLeftAfterShields är = 0 ss skall
 			// damageNoArmor dras av skölden. annars stts skölden till 0 och actualDamage
 			// dras av hullet.
-			String damagedStatus = shipToBeHit.getSpaceship().shipHit(actualDamage, damageLeftAfterShields, damageNoArmor);
+			String damagedStatus = shipHit(shipToBeHit.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, galaxy, galaxy.getGameWorld());
 			totalDamage += actualDamage;
 			Logger.finer("multiplier=" + multiplier + " damageNoArmor=" + damageNoArmor + " damageLeftAfterShields="
 					+ damageLeftAfterShields + " afterShieldsDamageRatio=" + afterShieldsDamageRatio + " actualDamage="
@@ -1094,21 +875,16 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral(
 						"Your ship " + shipToBeHit.getSpaceship().getName() + " on " + aPlanet.getName() + " was destroyed when hit ("
 								+ damageNoArmor + ") by an enemy " + aBuilding.getBuildingType().getName() + ".");
-				// är detta rätt? ser skumt ut
-				//TODO 2019-12-26 Kolla upp att detta, ersätts och nya raporteringen. 
-				//addToLatestLostInSpace(shipToBeHit);
 				if (aPlanet.getPlayerInControl() != null) {
 					aPlanet.getPlayerInControl()
 							.addToGeneral("Your " + aBuilding.getBuildingType().getName() + " at " + aPlanet.getName()
 									+ "hit (" + damageNoArmor + ") and destroyed an enemy "
-									+ shipToBeHit.getSpaceship().getSpaceshipType().getName() + ".");
+									+ SpaceshipPureFunctions.getSpaceshipTypeByKey(shipToBeHit.getSpaceship().getTypeKey(), galaxy.getGameWorld()).getName() + ".");
 					// är detta rätt? ser skumt ut
-					//TODO 2019-12-26 Kolla upp att detta, ersätts och nya raporteringen.
-					//aPlanet.getPlayerInControl().getTurnInfo().addToLatestShipsLostInSpace(shipToBeHit.getSpaceship());
 				}
 				// check for destroyed squadrons in the carrier hit
 				List<TaskForceSpaceShip> squadronsDestroyed = new LinkedList<>();
-				if(shipToBeHit.getSpaceship().isCarrier()) {
+				if(SpaceshipPureFunctions.isCarrier(shipToBeHit.getSpaceship(), galaxy.getGameWorld())) {
 					for (TaskForceSpaceShip aShip : allShips) {
 						Logger.finer("sqd loc: " + aShip.getSpaceship().getCarrierLocation());
 						if (aShip.getSpaceship().isSquadron() & (aShip.getSpaceship().getCarrierLocation() == shipToBeHit.getSpaceship())) { // squadron in a destroyed
@@ -1118,12 +894,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 					}
 				}
 				// remove ship
-				galaxy.removeShip(shipToBeHit.getSpaceship());
+				SpaceshipMutator.removeShip(shipToBeHit.getSpaceship(), galaxy);
 				allShips.remove(shipToBeHit);
 				destroyedShips.add(shipToBeHit);
 				for (TaskForceSpaceShip aSquadron : squadronsDestroyed) {
 					Logger.finer("sqd destroyed!");
-					galaxy.removeShip(aSquadron.getSpaceship());
+					SpaceshipMutator.removeShip(aSquadron.getSpaceship(), galaxy);
 					allShips.remove(aSquadron);
 					destroyedShips.add(aSquadron);
 					galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral(
@@ -1146,7 +922,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				if (aPlanet.getPlayerInControl() != null) {
 					aPlanet.getPlayerInControl()
 							.addToGeneral("Your " + aBuilding.getBuildingType().getName() + " at " + aPlanet.getName()
-									+ " hit an enemy " + shipToBeHit.getSpaceship().getSpaceshipType().getName() + " and the damage ("
+									+ " hit an enemy " + SpaceshipPureFunctions.getSpaceshipTypeByKey(shipToBeHit.getSpaceship().getTypeKey(), galaxy.getGameWorld()).getName() + " and the damage ("
 									+ damageNoArmor + ") " + damagedStatus + ".");
 				}
 			}
@@ -1237,8 +1013,37 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	public String getFactionName() {
 		return factionName;
 	}
-	
-	
-	
+
+
+	// returnera sträng om skottets effekt, förstört, skadat, togs upp av
+	// sköldarna
+	public String shipHit(Spaceship spaceship, int damage, int damageAfterShields, int damageNoArmor, Galaxy galaxy, GameWorld gameWorld) {
+		String returnString = "";
+		Logger.finer( "shipHit currentShields "
+				+ spaceship.getCurrentShields() + " damage " + damage + " currentdc "
+				+ spaceship.getCurrentDc() + " damageAfterShields: " + damageAfterShields
+				+ " damageNoArmor: " + damageNoArmor);
+		// if (currentshields > damage){
+		if (damageAfterShields == 0) { // all damage was absorbed by the shields
+			spaceship.setCurrentShields(spaceship.getCurrentShields() - damageNoArmor);
+			int shieldStrength = (int) Math.round((100.0 * spaceship.getCurrentShields()) / SpaceshipPureFunctions.getShields(spaceship, gameWorld));
+			returnString = "was absorbed by the shields (shield strength: " + String.valueOf(shieldStrength) + "%).";
+		} else {
+			// damage = damage - currentshields;
+			spaceship.setCurrentShields(0);
+			if (spaceship.getCurrentDc() > damage) {
+				spaceship.setCurrentDc(spaceship.getCurrentDc() - damage);
+				int hullStrength = (int) Math.round((100.0 * spaceship.getCurrentDc())	/ spaceship.getDamageCapacity());
+				returnString = "damaged the ship (hull strength:" + String.valueOf(hullStrength) + "%).";
+			} else {
+				spaceship.setCurrentDc(0);
+				if (spaceship.getOwner() != null) {
+					VipMutator.checkVIPsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy);
+					galaxy.checkTroopsInDestroyedShips(spaceship, spaceship.getOwner());
+				}
+			}
+		}
+		return returnString;
+	}
 	
 }

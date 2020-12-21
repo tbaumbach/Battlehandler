@@ -8,8 +8,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
+import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
+import spaceraze.world.Galaxy;
+import spaceraze.world.GameWorld;
 import spaceraze.world.enums.InitiativeMethod;
 import spaceraze.world.report.spacebattle.*;
 
@@ -27,21 +31,21 @@ public class SpaceBattlePerformer {
 	*/
 	
 	// Called in simulationMode
-	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod){
-		performCombat(tf1, tf2, initMethod, null);
+	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, GameWorld gameWorld){
+		performCombat(tf1, tf2, initMethod, null, gameWorld, null);
 		
 	}
 	
-	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, String planetName){
+	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, String planetName, GameWorld gameWorld, Galaxy galaxy){
 		
 	      Logger.fine(planetName);
 	      //this.galaxy = galaxy;
 	      this.initMethod = initMethod;
 	      
-	      Map<String, OwnSpaceship> tf1OwnSpaceships = createOwnSpaceships(tf1);
-	      Map<String, EnemySpaceship> tf1EnemySpaceships = createEnemySpaceship(tf1);
-	      Map<String, OwnSpaceship> tf2OwnSpaceships = createOwnSpaceships(tf2);
-	      Map<String, EnemySpaceship> tf2EnemySpaceships = createEnemySpaceship(tf2);
+	      Map<String, OwnSpaceship> tf1OwnSpaceships = createOwnSpaceships(tf1, gameWorld);
+	      Map<String, EnemySpaceship> tf1EnemySpaceships = createEnemySpaceship(tf1, gameWorld);
+	      Map<String, OwnSpaceship> tf2OwnSpaceships = createOwnSpaceships(tf2, gameWorld);
+	      Map<String, EnemySpaceship> tf2EnemySpaceships = createEnemySpaceship(tf2, gameWorld);
 	      List<SpaceBattleAttack> attackReports1 = new ArrayList<>();
 	      List<SpaceBattleAttack> attackReports2 = new ArrayList<>();
 	       
@@ -62,7 +66,7 @@ public class SpaceBattlePerformer {
 	    	attackReports2.add(attackReport2);
 
 	        if (getShootingSide(tf1,tf2,r) == 1){
-	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2); // returnerar null om ett skepp flyr istället för att skjuta
+	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2, gameWorld, galaxy); // returnerar null om ett skepp flyr istället för att skjuta
 	          if (firingShip != null){
 	        	  Logger.finest("firingShip: " + firingShip.getSpaceship().getName() + " ");
 	          }else{
@@ -70,15 +74,15 @@ public class SpaceBattlePerformer {
 	          }
 	          tf1status = tf1.getStatus();
 	          if (firingShip != null){ // tf2 är beskjutet
-	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2);
+	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2, gameWorld);
 	          }else{   // om inget skepp returneras betyder det att tf1 håller på att retirera
 	            tf2status = FIGHTING;
 	          }
 	        }else{
-	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1);
+	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1, gameWorld, galaxy);
 	          tf2status = tf2.getStatus();
 	          if (firingShip != null){ // tf1 är beskjutet
-	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1);
+	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1, gameWorld);
 	          }else{   // om inget skepp returneras betyder det att tf2 håller på att retirera
 	            tf1status = FIGHTING;
 	          }
@@ -221,11 +225,11 @@ public class SpaceBattlePerformer {
 		return tf1RelSizeMod / (tf1RelSizeMod + tf2RelSizeMod);
     }
     
-    public TaskForceSpaceShip getFiringShip(TaskForce attackerTF, TaskForce opponentTF, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport){
+    public TaskForceSpaceShip getFiringShip(TaskForce attackerTF, TaskForce opponentTF, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld, Galaxy galaxy){
     	
     	TaskForceSpaceShip firingShip ;
         if (!attackerTF.isRunningAway()){
-        	attackerTF.runAway(opponentTF);
+        	attackerTF.runAway(opponentTF, gameWorld);
         }
         if (attackerTF.onlyFirstLine() && !attackerTF.isRunningAway()){
           int nrFirstLineShips = attackerTF.getTotalNrShips(false);
@@ -236,13 +240,13 @@ public class SpaceBattlePerformer {
 			firingShip = attackerTF.getAllSpaceShips().get(Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size());
         }
         
-        if (attackerTF.isRunningAway() && firingShip.getSpaceship().getRange().canMove()){ // tempss försöker fly
+        if (attackerTF.isRunningAway() && SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy).canMove()){ // tempss försöker fly
       	activeAttackReport.setWantsToRetreat(true);
       	targetAttackReport.setWantsToRetreat(true);
           if (!opponentTF.stopsRetreats()){ // tempss flyr
-			  boolean gotAway = firingShip.getSpaceship().retreat(TaskForce.getRandomClosestPlanet(attackerTF, firingShip.getSpaceship().getRange()));
+			  boolean gotAway = SpaceshipMutator.retreat(firingShip.getSpaceship(), TaskForce.getRandomClosestPlanet(attackerTF, SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy)), gameWorld);
         	attackerTF.getAllSpaceShips().remove(firingShip);
-            if (firingShip.getSpaceship().isCarrier()){
+            if (SpaceshipPureFunctions.isCarrier(firingShip.getSpaceship(), gameWorld)){
             	attackerTF.removeSquadronsFromCarrier(firingShip.getSpaceship());
             }else
             if (firingShip.getSpaceship().isSquadron()){
@@ -263,12 +267,12 @@ public class SpaceBattlePerformer {
         }
         
         activeAttackReport.setSpaceshipAttack(new SpaceshipAttack(firingShip.getSpaceship().getName(),
-        		firingShip.getSpaceship().getTypeName(), 
+        		SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getName(),
         		attackerTF.getDestroyedShips().contains(firingShip),
         		true,
         		firingShip.getSpaceship().getRetreatingTo() == null ? null : firingShip.getSpaceship().getRetreatingTo().getName()));
         
-        targetAttackReport.setSpaceshipAttack(new SpaceshipAttack(firingShip.getSpaceship().getTypeName(), attackerTF.getDestroyedShips().contains(firingShip), false));
+        targetAttackReport.setSpaceshipAttack(new SpaceshipAttack(SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getName(), attackerTF.getDestroyedShips().contains(firingShip), false));
         
         //Return null  if the ship is destroyed or retreating.
         return attackerTF.getDestroyedShips().contains(firingShip) || firingShip.getSpaceship().getRetreatingTo() != null ? null : firingShip;
@@ -287,19 +291,19 @@ public class SpaceBattlePerformer {
 		
 	}
     
-    private Map<String, OwnSpaceship> createOwnSpaceships(TaskForce taskForce) {
+    private Map<String, OwnSpaceship> createOwnSpaceships(TaskForce taskForce, GameWorld gameWorld) {
     	Map<String, OwnSpaceship> ownSpaceships = new HashMap<>();
     //	if(taskForce.getPlayerName() != null) { // no player is the same as Neutral or a simulation.
     		taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    			.forEach(ship -> ownSpaceships.put(ship.getUniqueName(), new OwnSpaceship(ship.getName(), ship.getType().getName(), ship.getScreened(), ship.getHullStrength())));
+    			.forEach(ship -> ownSpaceships.put(ship.getUniqueName(), new OwnSpaceship(ship.getName(), SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
     //	}
     	return ownSpaceships;
 	}
     
-    private Map<String, EnemySpaceship> createEnemySpaceship(TaskForce taskForce) {
+    private Map<String, EnemySpaceship> createEnemySpaceship(TaskForce taskForce, GameWorld gameWorld) {
     	Map<String, EnemySpaceship> enemySpaceships = new HashMap<>();
     	taskForce.getAllSpaceShips().stream().map(TaskForceSpaceShip::getSpaceship)
-    		.forEach(ship -> enemySpaceships.put(ship.getUniqueName(), new EnemySpaceship(ship.getType().getName(), ship.getScreened(), ship.getHullStrength())));
+    		.forEach(ship -> enemySpaceships.put(ship.getUniqueName(), new EnemySpaceship( SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getTypeKey(), gameWorld).getName(), ship.isScreened(), ship.getHullStrength())));
     	return enemySpaceships;
 	}
     
