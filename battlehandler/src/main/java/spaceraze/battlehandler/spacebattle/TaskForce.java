@@ -349,7 +349,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				+ actualDamage + " damagedStatus=" + damagedStatus);
 		
 		if (targetShip.getSpaceship().isDestroyed()) {
-			firingShip.getSpaceship().addKill();
+			addKill(firingShip.getSpaceship());
 			allShips.remove(targetShip);
 			if (allShips.size() == 0) {
 				isDestroyed = true;
@@ -364,6 +364,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			statusString = "destroyed";
 		}
 		return statusString;
+	}
+
+	private void addKill(Spaceship spaceship){
+		spaceship.setKills(spaceship.getKills() + 1);
 	}
 
 	private SpaceshipTarget createSpaceShipTarget(Spaceship spaceship, boolean isOwn, GameWorld gameWorld){
