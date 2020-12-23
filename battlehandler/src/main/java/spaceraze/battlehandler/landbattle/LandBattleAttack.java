@@ -3,8 +3,10 @@ package spaceraze.battlehandler.landbattle;
 import java.util.LinkedList;
 import java.util.List;
 
+import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
+import spaceraze.world.GameWorld;
 import spaceraze.world.enums.LandBattleAttackType;
 
 public abstract class LandBattleAttack {
@@ -22,7 +24,7 @@ public abstract class LandBattleAttack {
 		return attackType;
 	}
 	
-	public abstract void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus);
+	public abstract void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld);
 	
 	protected TaskForceTroop getRandomOpponent(){
 		List<TaskForceTroop> okOpponents = getNonDestroyedOpponents();
@@ -37,11 +39,11 @@ public abstract class LandBattleAttack {
 	private List<TaskForceTroop> getNonDestroyedOpponents(){
 		List<TaskForceTroop> okTroops = new LinkedList<>();
 		for (TaskForceTroop aTroop : targetOpponents) {
-			if (!aTroop.getTroop().isDestroyed()){
-				Logger.finer(aTroop.getTroop().getUniqueShortName() + " not destroyed: " + aTroop.getTroop().getCurrentDC());
+			if (!TroopPureFunctions.isDestroyed(aTroop.getTroop())){
+				Logger.finer(aTroop.getTroop().getShortName() + " not destroyed: " + aTroop.getTroop().getCurrentDamageCapacity());
 				okTroops.add(aTroop);
 			}else{
-				Logger.finer(aTroop.getTroop().getUniqueShortName() + " destroyed: " + aTroop.getTroop().getCurrentDC());
+				Logger.finer(aTroop.getTroop().getShortName() + " destroyed: " + aTroop.getTroop().getCurrentDamageCapacity());
 			}
 		}
 		Logger.finer("okTroops size: " + okTroops.size());
@@ -54,7 +56,7 @@ public abstract class LandBattleAttack {
 		retStr = retStr + "res=" + resistance + " ";
 		retStr = retStr + "opp=" + resistance + " ";
 		for (TaskForceTroop aTroop : targetOpponents) {
-			retStr = retStr + aTroop.getTroop().getUniqueShortName() + ";";
+			retStr = retStr + aTroop.getTroop().getShortName() + ";";
 		}
 		return retStr;
 	}

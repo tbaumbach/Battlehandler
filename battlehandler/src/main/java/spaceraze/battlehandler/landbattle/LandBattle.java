@@ -3,15 +3,16 @@ package spaceraze.battlehandler.landbattle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
+import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
+import spaceraze.world.GameWorld;
+import spaceraze.world.Troop;
 import spaceraze.world.VIP;
 import spaceraze.world.enums.TroopTargetingType;
 import spaceraze.world.enums.TypeOfTroop;
@@ -21,19 +22,21 @@ import spaceraze.world.report.landbattle.TroopState;
 
 public class LandBattle {
 	private String planetName;
-	private int planetResistence;
+	private int planetResistance;
 	private int currentTurn;
 	private LandBattleGroup defBG;
 	private LandBattleGroup attBG;
+	private GameWorld gameWorld;
 	
-	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistence, int currentTurn){
+	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistance, int currentTurn, GameWorld gameWorld){
 		// create battle groups
-    	this.defBG = new LandBattleGroup(defendingTaskForceTroops);
-    	this.attBG = new LandBattleGroup(attackingTaskForceTroops);
+    	this.defBG = new LandBattleGroup(defendingTaskForceTroops, gameWorld);
+    	this.attBG = new LandBattleGroup(attackingTaskForceTroops, gameWorld);
 		
 		this.planetName = planetName;
-		this.planetResistence = resistence;
+		this.planetResistance = resistance;
 		this.currentTurn = currentTurn;
+		this.gameWorld = gameWorld;
 	}
 	
 	public void performBattle(){
@@ -60,9 +63,9 @@ public class LandBattle {
 		Logger.finer("Creating master attack list");
     	List<LandBattleAttack> attackList = new LinkedList<>();
     	// add all close combat & support troops to master attack list
-    	defBG.addToMasterAttackList(attackList,opponentHandler,currentTurn,attBG,true, planetResistence);
+    	defBG.addToMasterAttackList(attackList,opponentHandler,currentTurn,attBG,true, planetResistance);
     	printMasterAttackList(attackList);
-    	attBG.addToMasterAttackList(attackList,opponentHandler,currentTurn,defBG,false, planetResistence);
+    	attBG.addToMasterAttackList(attackList,opponentHandler,currentTurn,defBG,false, planetResistance);
     	printMasterAttackList(attackList);
 		Logger.finer("Master attack list finished");
     	// randomize master attack list
@@ -126,13 +129,13 @@ public class LandBattle {
 	private void performAttacks(List<LandBattleAttack> attackList){
 		for (LandBattleAttack attack : attackList) {
 			Logger.finer("***** " + attack.toString() + " *****");
-			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()));
+			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()), gameWorld);
 		}
 	}
 	
 	private int getVIPBonus(List<TaskForceTroop> taskForceTroops) {
 		//TODO 2020-01-04 Test this out, do the compering work with null value?
-		return taskForceTroops.stream().filter(taskForceTroop -> !taskForceTroop.getTroop().isDestroyed())
+		return taskForceTroops.stream().filter(taskForceTroop -> !TroopPureFunctions.isDestroyed(taskForceTroop.getTroop()))
 				.flatMap(taskForceTroop -> taskForceTroop.getVipOnTroop().stream())
 				.map(VIP::getLandBattleGroupAttackBonus).mapToInt(v -> v).max().orElse(0);
 
@@ -225,15 +228,15 @@ public class LandBattle {
 			int index = 0;
 			while (tempTroop == null && tmpStabbed.size() > index) {
 				troop = tmpStabbed.get(index);
-				if(offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ALLROUND)){
+				if(TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ALLROUND)){
 					tempTroop = troop;
 					opponentHandler.addOpponents(offTroop, troop);
-				} else if (offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
-					if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+				} else if (TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
+					if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
 						tempTroop = troop;
 					}
 				}else{// ANTITANK
-					if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+					if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
 						tempTroop = troop;
 					}
 				}
@@ -268,15 +271,15 @@ public class LandBattle {
     			int index = 0;
     			while (tempTroop == null && tmpStabbed.size() > index) {
     				troop = tmpStabbed.get(index);
-    				if(offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ALLROUND)){
+    				if(TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ALLROUND)){
     					tempTroop = troop;
     					opponentHandler.addOpponents(offTroop, troop);
-    				} else if (offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
-    					if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+    				} else if (TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
+    					if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
     						tempTroop = troop;
     					}
     				}else{// ANTITANK
-    					if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+    					if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
     						tempTroop = troop;
     					}
     				}
@@ -336,15 +339,15 @@ public class LandBattle {
 				int index = 0;
 				while (tempTroop == null && defFlankers.size() > index) {
 					troop = defFlankers.get(index);
-					if(offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ALLROUND)){
+					if(TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ALLROUND)){
 						tempTroop = troop;
 						opponentHandler.addOpponents(offTroop, troop);
-					} else if (offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
-						if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+					} else if (TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
+						if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
 							tempTroop = troop;
 						}
 					}else{// ANTITANK
-						if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+						if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
 							tempTroop = troop;
 						}
 					}
@@ -358,15 +361,15 @@ public class LandBattle {
 				int index = 0;
 				while (tempTroop == null && attFlankers.size() > index) {
 					troop = attFlankers.get(index);
-					if(offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ALLROUND)){
+					if(TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ALLROUND)){
 						tempTroop = troop;
 						opponentHandler.addOpponents(offTroop, troop);
-					} else if (offTroop.getTroop().getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
-						if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+					} else if (TroopPureFunctions.getTroopTypeByKey(offTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
+						if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
 							tempTroop = troop;
 						}
 					}else{// ANTITANK
-						if(troop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+						if(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
 							tempTroop = troop;
 						}
 					}
@@ -385,7 +388,11 @@ public class LandBattle {
     	Map<String, OwnTroop> ownTroops = new HashMap<>();
     //	if(taskForceTroops.get(0).getTroop().getOwner() != null) { // no player is the same as Neutral or a simulation.
     		taskForceTroops.stream().map(TaskForceTroop::getTroop)
-    		.forEach(troop -> ownTroops.put(troop.getUniqueName(), new OwnTroop(troop.getUniqueName(), troop.getTroopType().getUniqueName(), troop.getCurrentStrength(), troop.getPosition())));
+    		.forEach(troop -> ownTroops.put(troop.getName(),
+					new OwnTroop(troop.getName(), TroopPureFunctions.getTroopTypeByKey(troop.getTypeKey(),
+							gameWorld).getName(),
+							getCurrentStrength(troop),
+							TroopPureFunctions.getTroopTypeByKey(troop.getTypeKey(), gameWorld).getDefaultPosition())));
     //	}
     	return ownTroops;
 	}
@@ -394,14 +401,18 @@ public class LandBattle {
     	Map<String, EnemyTroop> enemyTroops = new HashMap<>();
     //	if(taskForceTroops.get(0).getTroop().getOwner() != null) { // no player is the same as Neutral or a simulation.
     		taskForceTroops.stream().map(TaskForceTroop::getTroop)
-    		.forEach(troop -> enemyTroops.put(troop.getUniqueName(), new EnemyTroop(troop.getTroopType().getUniqueName(), troop.getCurrentStrength(), troop.getPosition())));
+    		.forEach(troop -> enemyTroops.put(troop.getName(),
+					new EnemyTroop(TroopPureFunctions.getTroopTypeByKey(troop.getTypeKey(),
+							gameWorld).getName(),
+							getCurrentStrength(troop),
+							TroopPureFunctions.getTroopTypeByKey(troop.getTypeKey(), gameWorld).getDefaultPosition())));
     //	}
     	return enemyTroops;
 	}
     
     private void postBattleUpdateTroop(LandBattleGroup landBattleGroup, Map<String, ? extends TroopState> troops) {
     	landBattleGroup.getTroops().stream().map(TaskForceTroop::getTroop)
-		.forEach(troop -> troops.get(troop.getUniqueName()).setPostBattleHitPoints(troop.getCurrentStrength()));
+		.forEach(troop -> troops.get(troop.getName()).setPostBattleHitPoints(getCurrentStrength(troop)));
 	}
 
 	public LandBattleGroup getDefBG() {
@@ -410,6 +421,10 @@ public class LandBattle {
 
 	public LandBattleGroup getAttBG() {
 		return attBG;
+	}
+
+	private int getCurrentStrength(Troop troop) {
+		return (int) Math.round((100.0 * troop.getCurrentDamageCapacity()) / troop.getDamageCapacity());
 	}
 
 	

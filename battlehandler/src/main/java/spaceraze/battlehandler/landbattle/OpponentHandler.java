@@ -52,7 +52,7 @@ public class OpponentHandler {
 	}
 	
 	public boolean maxOneOpponent(TaskForceTroop aTroop){
-    	Logger.finer("maxOneOpponent: " + aTroop.getTroop().getUniqueShortName());
+    	Logger.finer("maxOneOpponent: " + aTroop.getTroop().getShortName());
 		int found = 0;
 		int counter = 0;
 		while (found < 2 && counter < opponents.size()){

@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
+import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
@@ -1053,7 +1054,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				spaceship.setCurrentDc(0);
 				if (spaceship.getOwner() != null) {
 					VipMutator.checkVIPsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy);
-					galaxy.checkTroopsInDestroyedShips(spaceship, spaceship.getOwner());
+					TroopMutator.checkTroopsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy);
 				}
 			}
 		}

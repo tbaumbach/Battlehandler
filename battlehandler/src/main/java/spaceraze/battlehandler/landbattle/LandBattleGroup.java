@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Logger;
+import spaceraze.world.GameWorld;
+import spaceraze.world.Troop;
 import spaceraze.world.enums.BattleGroupPosition;
 import spaceraze.world.enums.LandBattleAttackType;
 import spaceraze.world.enums.TroopTargetingType;
@@ -19,13 +22,15 @@ public class LandBattleGroup {
 	private List<TaskForceTroop> flankers;
 	private List<TaskForceTroop> support;
 	private LandBattleReport report;
+	private GameWorld gameWorld;
 	
-	public LandBattleGroup(List<TaskForceTroop> someTroops){
+	public LandBattleGroup(List<TaskForceTroop> someTroops, GameWorld gameWorld){
 		troops = someTroops;
 		firstLine = new LinkedList<>();
 		reserve = new LinkedList<>();
 		flankers = new LinkedList<>();
 		support = new LinkedList<>();
+		this.gameWorld = gameWorld;
 		
 	      
 	}
@@ -35,7 +40,7 @@ public class LandBattleGroup {
 		for (TaskForceTroop aTroop : troops) {
 			List<TaskForceTroop> opponents = opponentHandler.getOpponents(aTroop);
 			BattleGroupPosition aPosition = getPosition(aTroop);
-			Logger.finer("addToMaster: " + aTroop.getTroop().getUniqueShortName() + " " + (aPosition == BattleGroupPosition.SUPPORT) + " " + aTroop.getTroop().getAttackArtillery() + " " + opponents.size());
+			Logger.finer("addToMaster: " + aTroop.getTroop().getShortName() + " " + (aPosition == BattleGroupPosition.SUPPORT) + " " + TroopPureFunctions.getAttackArtillery(aTroop.getTroop()) + " " + opponents.size());
 			if (!opponents.isEmpty()){
 				if (aPosition == BattleGroupPosition.FIRST_LINE){
 					int nrAttacks = getNrAttacks(aTroop,currentTurn);
@@ -56,7 +61,7 @@ public class LandBattleGroup {
 				}
 				// Note: reserve never have an opponent and defence cannot attack, only do counter-fire
 			}else
-			if (aPosition == BattleGroupPosition.SUPPORT && aTroop.getTroop().getAttackArtillery() > 0){
+			if (aPosition == BattleGroupPosition.SUPPORT &&TroopPureFunctions.getAttackArtillery(aTroop.getTroop()) > 0){
 				Logger.finer("-> addingToMaster");
 				// add artillery
 				int nrAttacks = getNrAttacks(aTroop,currentTurn);
@@ -88,9 +93,9 @@ public class LandBattleGroup {
 	}
 	
 	private int getNrAttacks(TaskForceTroop aTroop, int currentTurn){
-		Logger.finer("getNrAttacks; " + aTroop.getTroop().getUniqueShortName());
+		Logger.finer("getNrAttacks; " + aTroop.getTroop().getShortName());
 		// get basic nr of attacks
-		int attacks = aTroop.getTroop().getTroopType().getNrAttacks();
+		int attacks = TroopPureFunctions.getTroopTypeByKey(aTroop.getTroop().getTypeKey(), gameWorld).getNrAttacks();
 		// is there any VIPs with attack bonus on this troop?
 //		List<VIP> bonusVIPs = getLandBattleVIPs(aTroop, g);
 //		int maxBonus = 0;
@@ -115,7 +120,7 @@ public class LandBattleGroup {
 		attacks += maxGroupBonus;*/
 		// drop penalty?
 		if (aTroop.getTroop().getLastPlanetMoveTurn() == currentTurn){
-			attacks -= aTroop.getTroop().getTroopType().getDropPenalty();
+			attacks -= TroopPureFunctions.getTroopTypeByKey(aTroop.getTroop().getTypeKey(), gameWorld).getDropPenalty();
 			if (attacks < 0){ // is this one needed?
 				attacks = 0; 
 			}
@@ -190,12 +195,31 @@ public class LandBattleGroup {
 			if (bestVictim == null){
 				bestVictim = aTroop;
 			}else{
-				if (aTroop.getTroop().getSuitableWeight(anAttacker.getTroop()) > bestVictim.getTroop().getSuitableWeight(anAttacker.getTroop())){
+				if (getSuitableWeight(aTroop.getTroop(), anAttacker.getTroop()) > getSuitableWeight(bestVictim.getTroop(), anAttacker.getTroop())){
 					bestVictim = aTroop;
 				}
 			}
 		}
 		return bestVictim;
+	}
+
+	/**
+	 * Get a value (higher is better) of how suitable this troop is as a victim of
+	 * anAttackers attack
+	 */
+	private double getSuitableWeight(Troop victim, Troop anAttacker){
+		double weight = 0;
+		if (TroopPureFunctions.getTroopTypeByKey(victim.getTypeKey(), gameWorld).isArmor()){
+			weight = TroopPureFunctions.getAttackArmored(anAttacker);
+		}else{
+			weight = TroopPureFunctions.getAttackInfantry(anAttacker);
+		}
+		if (TroopPureFunctions.getTroopTypeByKey(anAttacker.getTypeKey(), gameWorld).isArmor()){
+			weight -= TroopPureFunctions.getAttackArmored(victim);
+		}else{
+			weight -= TroopPureFunctions.getAttackInfantry(victim);
+		}
+		return weight;
 	}
 	
 	/**
@@ -218,12 +242,12 @@ public class LandBattleGroup {
 		Logger.finer("addFirstLineOpponents2");
 		Collections.shuffle(firstLine);
 		for (TaskForceTroop aTroop : firstLine) {
-			Logger.finer("aTroop: " + aTroop.getTroop().getUniqueShortName());
+			Logger.finer("aTroop: " + aTroop.getTroop().getShortName());
 			if (opponentHandler.noOpponent(aTroop)){
 				Logger.finer("aTroop has no opponent");
-				TaskForceTroop newOpponent = smallerBG.findSmallerOpponent(opponentHandler, aTroop.getTroop().getTargetingType());
+				TaskForceTroop newOpponent = smallerBG.findSmallerOpponent(opponentHandler, TroopPureFunctions.getTroopTypeByKey(aTroop.getTroop().getTypeKey(), gameWorld).getTargetingType());
 				if (newOpponent != null){
-					Logger.finer("aTroop new opponent: " + newOpponent.getTroop().getUniqueShortName());
+					Logger.finer("aTroop new opponent: " + newOpponent.getTroop().getShortName());
 					opponentHandler.addOpponents(newOpponent,aTroop);
 				}
 			}
@@ -239,13 +263,13 @@ public class LandBattleGroup {
 		while (found == null && counter < firstLine.size()){
 	    	Logger.finer("counter: " + counter);
 	    	TaskForceTroop firstLineTroop = firstLine.get(counter);
-	    	Logger.finer("firstLineTroop: " + firstLineTroop.getTroop().getUniqueShortName());
+	    	Logger.finer("firstLineTroop: " + firstLineTroop.getTroop().getShortName());
 			if (opponentHandler.maxOneOpponent(firstLineTroop)){
 		    	Logger.finer("maxOneOpponent=true ");
 		    	if(targetType.equals(TroopTargetingType.ALLROUND)){
 		    		found = firstLineTroop;
 				} else if (targetType.equals(TroopTargetingType.ANTIINFANTRY)){
-					if(firstLineTroop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+					if(TroopPureFunctions.getTroopTypeByKey(firstLineTroop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
 						found = firstLineTroop;
 					}else{
 						if(firstTroopWithNoOpponentButWrongTypeOfTroop == null){
@@ -253,7 +277,7 @@ public class LandBattleGroup {
 						}
 					}
 				}else{// ANTITANK
-					if(firstLineTroop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+					if(TroopPureFunctions.getTroopTypeByKey(firstLineTroop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
 						found = firstLineTroop;
 					}else{
 						if(firstTroopWithNoOpponentButWrongTypeOfTroop == null){
@@ -296,11 +320,11 @@ public class LandBattleGroup {
 		while (!found && counter < firstLine.size()){
 			TaskForceTroop firstLineTroop = firstLine.get(counter);
 			if (opponentHandler.noOpponent(firstLineTroop)){
-				if(aTroop.getTroop().getTargetingType().equals(TroopTargetingType.ALLROUND)){
+				if(TroopPureFunctions.getTroopTypeByKey(aTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ALLROUND)){
 					opponentHandler.addOpponents(aTroop, firstLineTroop);
 					found = true;
-				} else if (aTroop.getTroop().getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
-					if(firstLineTroop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
+				} else if (TroopPureFunctions.getTroopTypeByKey(aTroop.getTroop().getTypeKey(), gameWorld).getTargetingType().equals(TroopTargetingType.ANTIINFANTRY)){
+					if(TroopPureFunctions.getTroopTypeByKey(firstLineTroop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.INFANTRY)){
 						opponentHandler.addOpponents(aTroop, firstLineTroop);
 						found = true;
 					}else{
@@ -309,7 +333,7 @@ public class LandBattleGroup {
 						}
 					}
 				}else{// ANTITANK
-					if(firstLineTroop.getTroop().getTroopType().getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
+					if(TroopPureFunctions.getTroopTypeByKey(firstLineTroop.getTroop().getTypeKey(), gameWorld).getTypeOfTroop().equals(TypeOfTroop.ARMORED)){
 						opponentHandler.addOpponents(aTroop, firstLineTroop);
 						found = true;
 					}else{
@@ -352,14 +376,14 @@ public class LandBattleGroup {
 	 */
 	public void performLineup(){
 		for (TaskForceTroop troop : troops) {
-			if (troop.getTroop().getPosition() == BattleGroupPosition.FIRST_LINE){
-				Logger.finer(troop.getTroop().getUniqueShortName() + ": BattleGroupPosition.FIRST_LINE");
+			if (TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getDefaultPosition() == BattleGroupPosition.FIRST_LINE){
+				Logger.finer(troop.getTroop().getShortName() + ": BattleGroupPosition.FIRST_LINE");
 				firstLine.add(troop);
 			}else
-			if (troop.getTroop().getPosition() == BattleGroupPosition.FLANKER){
+			if (TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getDefaultPosition() == BattleGroupPosition.FLANKER){
 				flankers.add(troop);
 			}else
-			if (troop.getTroop().getPosition() == BattleGroupPosition.RESERVE){
+			if (TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld).getDefaultPosition() == BattleGroupPosition.RESERVE){
 				reserve.add(troop);
 			}else{
 				support.add(troop);

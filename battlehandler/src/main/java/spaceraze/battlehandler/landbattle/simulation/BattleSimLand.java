@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 
 import spaceraze.battlehandler.landbattle.LandBattle;
 import spaceraze.battlehandler.landbattle.TaskForceTroop;
+import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
 import spaceraze.world.Troop;
@@ -58,18 +59,18 @@ public class BattleSimLand extends Thread {
         		message = "Cannot be set as a flanker: " + typeName;
     		}else{*/
             Troop aTroop =  tt.getTroop(null, techBonus, 0, 0);
-            Logger.finer("New troop created: " + aTroop.getUniqueShortName());
+            Logger.finer("New troop created: " + aTroop.getShortName());
             if (kills > 0) {
                 aTroop.setKills(kills);
             }
             if (damage > 0) {
-                int currentDC = (aTroop.getMaxDC() / 100) * (100 - damage);
-                aTroop.setCurrentDC(currentDC);
+                int currentDC = (aTroop.getDamageCapacity() / 100) * (100 - damage);
+                aTroop.setCurrentDamageCapacity(currentDC);
             }
 
             List<VIP> vips = new ArrayList<>();
             for (String aVipName : vipNames) {
-                Logger.finer("Adding VIP: " + aVipName + " " + aTroop.getUniqueShortName());
+                Logger.finer("Adding VIP: " + aVipName + " " + aTroop.getShortName());
                 VIP vip = VIP.getNewVIPshortName(aVipName, gameWorld) != null ? VIP.getNewVIPshortName(aVipName, gameWorld) : VIP.getNewVIP(aVipName, gameWorld);
                 if (vip != null) {
                     vips.add(vip);
@@ -226,7 +227,7 @@ public class BattleSimLand extends Thread {
 						countWinsPlayer1++;
 					} else {
 						// perform land battle
-						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn);
+						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn, gameWorld);
 						battle.performBattle();
 						currentTurn++;
 					}
@@ -326,7 +327,7 @@ public class BattleSimLand extends Thread {
             if (support) {
                 total += troop.getTroop().getUpkeep();
             } else {
-                total += troop.getTroop().getTroopType().getCostBuild(null);
+                total += TroopPureFunctions.getCostBuild(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld), null);
             }
         }
         return total;
@@ -335,7 +336,7 @@ public class BattleSimLand extends Thread {
     private static void removeDestroyedTroops(List<TaskForceTroop> troops) {
         List<TaskForceTroop> destroyedTroops = new LinkedList<>();
         for (TaskForceTroop aTroop : troops) {
-            if (aTroop.getTroop().isDestroyed()) {
+            if (TroopPureFunctions.isDestroyed(aTroop.getTroop())) {
                 destroyedTroops.add(aTroop);
             }
         }
