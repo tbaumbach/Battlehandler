@@ -11,6 +11,7 @@ import java.util.StringTokenizer;
 import spaceraze.battlehandler.landbattle.LandBattle;
 import spaceraze.battlehandler.landbattle.TaskForceTroop;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
+import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
 import spaceraze.world.Troop;
@@ -58,7 +59,7 @@ public class BattleSimLand extends Thread {
     	/*	if ((aPosition == BattleGroupPosition.FLANKER) & (!tt.isAttackScreened())){
         		message = "Cannot be set as a flanker: " + typeName;
     		}else{*/
-            Troop aTroop =  tt.getTroop(null, techBonus, 0, 0);
+            Troop aTroop =  tt.getTroop(0, techBonus, 0, 0);
             Logger.finer("New troop created: " + aTroop.getShortName());
             if (kills > 0) {
                 aTroop.setKills(kills);
@@ -71,7 +72,7 @@ public class BattleSimLand extends Thread {
             List<VIP> vips = new ArrayList<>();
             for (String aVipName : vipNames) {
                 Logger.finer("Adding VIP: " + aVipName + " " + aTroop.getShortName());
-                VIP vip = VIP.getNewVIPshortName(aVipName, gameWorld) != null ? VIP.getNewVIPshortName(aVipName, gameWorld) : VIP.getNewVIP(aVipName, gameWorld);
+                VIP vip = VipMutator.getNewVIPShortName(aVipName, gameWorld) != null ? VipMutator.getNewVIPShortName(aVipName, gameWorld) : VipMutator.getNewVIP(aVipName, gameWorld);
                 if (vip != null) {
                     vips.add(vip);
                 }
@@ -327,7 +328,7 @@ public class BattleSimLand extends Thread {
             if (support) {
                 total += troop.getTroop().getUpkeep();
             } else {
-                total += TroopPureFunctions.getCostBuild(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld), null);
+                total += TroopPureFunctions.getCostBuild(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld), 0);
             }
         }
         return total;

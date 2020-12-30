@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 import spaceraze.battlehandler.spacebattle.SpaceBattlePerformer;
+import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
 import spaceraze.world.Spaceship;
@@ -63,7 +64,7 @@ public class BattleSim extends Thread {
 			sst = gameWorld.getSpaceshipTypeByShortName(typeName);
 		}
 		if (sst != null) {
-			Spaceship ss = sst.getShip(null, techBonus, 0, 0);
+			Spaceship ss = sst.getShip(0, techBonus, 0, 0);
 			/// TODO 2019-12-07 undersök varför detta är avmarkerat? Var det så att vi gjorde
 			// om och skeppen inte längre kan ändra screened? Testa i klienten och se om det
 			// går att screena ett skepp.
@@ -85,8 +86,8 @@ public class BattleSim extends Thread {
 	
 	private static List<VIP> createSpaceshipVips(GameWorld gameWorld, List<String> vipNames) {
 		return vipNames.stream()
-				.map(vipName -> VIP.getNewVIPshortName(vipName, gameWorld) != null
-						? VIP.getNewVIPshortName(vipName, gameWorld) : VIP.getNewVIP(vipName, gameWorld))
+				.map(vipName -> VipMutator.getNewVIPShortName(vipName, gameWorld) != null
+						? VipMutator.getNewVIPShortName(vipName, gameWorld) : VipMutator.getNewVIP(vipName, gameWorld))
 				.collect(Collectors.toList());
 	}
 	

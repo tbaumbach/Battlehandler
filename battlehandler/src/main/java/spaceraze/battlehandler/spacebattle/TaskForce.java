@@ -16,6 +16,7 @@ import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.vip.VipMutator;
+import spaceraze.servlethelper.game.vip.VipPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.Building;
@@ -300,7 +301,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int nr = 0;
 		
 		
-		boolean canAttackScreened = canAttackScreened(firingShip);
+		boolean canAttackScreened = canAttackScreened(firingShip, gameWorld);
 		// screenOnly == if true only ships in first lines are counted as possible targets. Perhaps the name should change to onlyFirstline?
 		boolean screenOnly = (!canAttackScreened) && onlyFirstLine();
 				
@@ -428,9 +429,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int totalAimBonus = 0;
 		// get aimBonus from ship and vip
 		totalAimBonus += getSpaceshipAimBonus(gameWorld);
-		VIP aimBonusVip = getAimBonusVIP();
+		VIP aimBonusVip = getAimBonusVIP(gameWorld);
 		if (aimBonusVip != null) {
-			totalAimBonus += aimBonusVip.getAimBonus();
+			totalAimBonus += VipPureFunctions.getVipTypeByKey(aimBonusVip.getTypeKey(), gameWorld).getAimBonus();
 		}
 		return totalAimBonus;
 	}
@@ -553,11 +554,11 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		if (totalBombardment > 0) {
 			// check if bombardment VIP exist in fleet
 			VIP bombVIP = allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-					.reduce((vip1, vip2) -> vip1.getBombardmentBonus() > vip2.getBombardmentBonus() ? vip1 : vip2).orElse(null);
+					.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getBombardmentBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getBombardmentBonus() ? vip1 : vip2).orElse(null);
 					//TODO 2019-12-26 Kolla att detta fungerar.
 					//galaxy.findHighestVIPbombardmentBonus(allShips);
 			if (bombVIP != null) {
-				totalBombardment += bombVIP.getBombardmentBonus();
+				totalBombardment += VipPureFunctions.getVipTypeByKey(bombVIP.getTypeKey(), gameWorld).getBombardmentBonus();
 			}
 		}
 		return totalBombardment;
@@ -616,24 +617,24 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return hasInterdictor;
 	}
 
-	public int getTotalInitBonus() {
+	public int getTotalInitBonus(GameWorld gameWorld) {
 		if (getPlayerName() != null) {
 			Logger.finer(
-					"getTotalInitBonus " + getPlayerName() + ": " + getInitBonus() + " " + getVIPInitiativeBonus());
+					"getTotalInitBonus " + getPlayerName() + ": " + getInitBonus() + " " + getVIPInitiativeBonus(gameWorld));
 		} else {
-			Logger.finer("getTotalInitBonus neutral: " + getInitBonus() + " " + getVIPInitiativeBonus());
+			Logger.finer("getTotalInitBonus neutral: " + getInitBonus() + " " + getVIPInitiativeBonus(gameWorld));
 		}
-		return getInitBonus() + getVIPInitiativeBonus();
+		return getInitBonus() + getVIPInitiativeBonus(gameWorld);
 	}
 
-	public int getTotalInitDefence() {
+	public int getTotalInitDefence(GameWorld gameWorld) {
 		if (getPlayerName() != null) {
 			Logger.finer(
-					"getTotalInitDefence " + getPlayerName() + ": " + getInitBonus() + " " + getVIPInitiativeBonus());
+					"getTotalInitDefence " + getPlayerName() + ": " + getInitBonus() + " " + getVIPInitiativeBonus(gameWorld));
 		} else {
-			Logger.finer("getTotalInitDefence neutral: " + getInitBonus() + " " + getVIPInitiativeBonus());
+			Logger.finer("getTotalInitDefence neutral: " + getInitBonus() + " " + getVIPInitiativeBonus(gameWorld));
 		}
-		return getInitDefence() + getVIPInitDefence();
+		return getInitDefence() + getVIPInitDefence(gameWorld);
 	}
 
 	public int getInitBonus() {
@@ -692,12 +693,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		*/
 	}
 
-	public int getVIPInitiativeBonus() {
+	public int getVIPInitiativeBonus(GameWorld gameWorld) {
 		
-		VIP InitBonusVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() != SpaceShipSize.SQUADRON).flatMap(ship -> ship.getVipOnShip().stream())
-		.reduce((vip1, vip2) -> vip1.getInitBonus() > vip2.getInitBonus() ? vip1 : vip2).orElse(null);
+		VIP initBonusVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() != SpaceShipSize.SQUADRON).flatMap(ship -> ship.getVipOnShip().stream())
+		.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitBonus() ? vip1 : vip2).orElse(null);
 		
-		int initBonusCapitalShip = InitBonusVip == null ? 0 : InitBonusVip.getInitBonus();
+		int initBonusCapitalShip = initBonusVip == null ? 0 : VipPureFunctions.getVipTypeByKey(initBonusVip.getTypeKey(), gameWorld).getInitBonus();
 		
 		/*
 		int initBonusCapitalShip = 0;
@@ -713,9 +714,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		
 		VIP initBonusSquadronVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() == SpaceShipSize.SQUADRON)
 				.filter(ship -> !isScreened(ship.getSpaceship())).flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> vip1.getInitSquadronBonus() > vip2.getInitSquadronBonus() ? vip1 : vip2).orElse(null);
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitFighterSquadronBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitFighterSquadronBonus() ? vip1 : vip2).orElse(null);
 		
-		int initBonusSquadron = initBonusSquadronVip == null ? 0 : initBonusSquadronVip.getInitSquadronBonus();
+		int initBonusSquadron = initBonusSquadronVip == null ? 0 : VipPureFunctions.getVipTypeByKey(initBonusSquadronVip.getTypeKey(), gameWorld).getInitFighterSquadronBonus();
 		
 		/*
 		int initBonusSquadron = 0;
@@ -752,10 +753,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return !((onlyFirstLine() && !ship.isScreened()) || !(onlyFirstLine()));
 	}
 
-	public int getVIPInitDefence() {
+	public int getVIPInitDefence(GameWorld gameWorld) {
 		VIP vip = allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> vip1.getInitDefence() > vip2.getInitDefence() ? vip1 : vip2).orElse(null);
-		return vip == null ?  0 : vip.getInitDefence();
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitDefence() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitDefence() ? vip1 : vip2).orElse(null);
+		return vip == null ?  0 : VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).getInitDefence();
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
 		/*
 		int initDefence = 0;
@@ -779,9 +780,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	 */
 	
 	// increases the chance to fire against the most damage ship.
-	public VIP getAimBonusVIP() {
+	public VIP getAimBonusVIP(GameWorld gameWorld) {
 		return allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> vip1.getAimBonus() > vip2.getAimBonus() ? vip1 : vip2).orElse(null);
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getAimBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getAimBonus() ? vip1 : vip2).orElse(null);
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
 		/*
 		VIP highestAimVIP = null;
@@ -995,13 +996,13 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
     		taskForce.getClosestFriendlyPlanets(aSpaceshipRange).get(new Random().nextInt(taskForce.getClosestFriendlyPlanets(aSpaceshipRange).size()));
     }
 	
-	private boolean canAttackScreened(TaskForceSpaceShip taskForceSpaceShip) {
+	private boolean canAttackScreened(TaskForceSpaceShip taskForceSpaceShip, GameWorld gameWorld) {
 		return taskForceSpaceShip.getSpaceship().isCanAttackScreenedShips() 
-				|| taskForceSpaceShip.getVipOnShip().stream().anyMatch(vip -> vipAllowShipToAttackScreened(vip, taskForceSpaceShip.getSpaceship()));
+				|| taskForceSpaceShip.getVipOnShip().stream().anyMatch(vip -> vipAllowShipToAttackScreened(vip, taskForceSpaceShip.getSpaceship(), gameWorld));
 	}
 	
-	private boolean vipAllowShipToAttackScreened(VIP vip, Spaceship ship) {
-		return (ship.getSize() == SpaceShipSize.SQUADRON && vip.isAttackScreenedSquadron()) || (ship.getSize() != SpaceShipSize.SQUADRON && vip.isAttackScreenedCapital());
+	private boolean vipAllowShipToAttackScreened(VIP vip, Spaceship ship, GameWorld gameWorld) {
+		return (ship.getSize() == SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).isAttackScreenedSquadron()) || (ship.getSize() != SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).isAttackScreenedCapital());
 	}
 	
 	/**

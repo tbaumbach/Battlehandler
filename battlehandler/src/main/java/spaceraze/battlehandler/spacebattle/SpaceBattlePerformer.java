@@ -66,7 +66,7 @@ public class SpaceBattlePerformer {
 	    	SpaceBattleAttack attackReport2 = new SpaceBattleAttack();
 	    	attackReports2.add(attackReport2);
 
-	        if (getShootingSide(tf1,tf2,r) == 1){
+	        if (getShootingSide(tf1, tf2, r, gameWorld) == 1){
 	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2, gameWorld, galaxy); // returnerar null om ett skepp flyr istället för att skjuta
 	          if (firingShip != null){
 	        	  Logger.finest("firingShip: " + firingShip.getSpaceship().getName() + " ");
@@ -134,13 +134,13 @@ public class SpaceBattlePerformer {
 	
 	// chansen för att den ena tf:en får skjuta baseras på antalet skepp i resp. flotta samt initiativbonus
     // Generaler, Jedis etc kanske kan öka chansen att få skjuta?
-    protected int getShootingSide(TaskForce tf1, TaskForce tf2, Random r){
+    protected int getShootingSide(TaskForce tf1, TaskForce tf2, Random r, GameWorld gameWorld){
       int returnValue = 0;
 //      double tf1ratio = (tf1.getNrFirstLineShips()*1.0) / ((tf1.getNrFirstLineShips() + tf2.getNrFirstLineShips()*1.0));
       double tf1ratio = getInitRatio(tf1,tf2);
 //      double tf1ratio = (tf1.getRelativeSize()*1.0) / ((tf1.getRelativeSize() + tf2.getRelativeSize()*1.0));
 //      int tf1initBonus = tf1.getTotalInitBonus() - tf2.getTotalInitBonus();
-      int tf1initBonus = getInitBonusTotal(tf1,tf2);
+      int tf1initBonus = getInitBonusTotal(tf1, tf2, gameWorld);
       Logger.finer("tf1initbonus: " + tf1initBonus + " ratio: " + tf1ratio);
       double randomDouble = r.nextDouble();
       if (tf1initBonus > 0){ // increase chance of initiative
@@ -183,12 +183,12 @@ public class SpaceBattlePerformer {
     	}
     }*/
     
-    protected int getInitBonusTotal(TaskForce tf1, TaskForce tf2){
-        int tf1initBonus = tf1.getTotalInitBonus() - tf2.getTotalInitDefence();
+    protected int getInitBonusTotal(TaskForce tf1, TaskForce tf2, GameWorld gameWorld){
+        int tf1initBonus = tf1.getTotalInitBonus(gameWorld) - tf2.getTotalInitDefence(gameWorld);
         if (tf1initBonus < 0){
         	tf1initBonus = 0;
         }
-        int tf2initBonus = tf2.getTotalInitBonus() - tf1.getTotalInitDefence();
+        int tf2initBonus = tf2.getTotalInitBonus(gameWorld) - tf1.getTotalInitDefence(gameWorld);
         if (tf2initBonus < 0){
         	tf2initBonus = 0;
         }

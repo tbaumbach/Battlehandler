@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
+import spaceraze.servlethelper.game.vip.VipPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
 import spaceraze.world.Troop;
-import spaceraze.world.VIP;
 import spaceraze.world.enums.TroopTargetingType;
 import spaceraze.world.enums.TypeOfTroop;
 import spaceraze.world.report.landbattle.EnemyTroop;
@@ -137,7 +137,7 @@ public class LandBattle {
 		//TODO 2020-01-04 Test this out, do the compering work with null value?
 		return taskForceTroops.stream().filter(taskForceTroop -> !TroopPureFunctions.isDestroyed(taskForceTroop.getTroop()))
 				.flatMap(taskForceTroop -> taskForceTroop.getVipOnTroop().stream())
-				.map(VIP::getLandBattleGroupAttackBonus).mapToInt(v -> v).max().orElse(0);
+				.map(vip -> VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).getLandBattleGroupAttackBonus()).mapToInt(v -> v).max().orElse(0);
 
 		// is there any VIPS with group attacks bonus in this Landbattlegroup?
 		/*		
