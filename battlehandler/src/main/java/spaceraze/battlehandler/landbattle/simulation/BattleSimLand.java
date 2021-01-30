@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 
 import spaceraze.battlehandler.landbattle.LandBattle;
 import spaceraze.battlehandler.landbattle.TaskForceTroop;
+import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
@@ -59,7 +60,7 @@ public class BattleSimLand extends Thread {
     	/*	if ((aPosition == BattleGroupPosition.FLANKER) & (!tt.isAttackScreened())){
         		message = "Cannot be set as a flanker: " + typeName;
     		}else{*/
-            Troop aTroop =  tt.getTroop(0, techBonus, 0, 0);
+            Troop aTroop = TroopMutator.createTroopForSimulation(tt, 0, techBonus, 0, 0);
             Logger.finer("New troop created: " + aTroop.getShortName());
             if (kills > 0) {
                 aTroop.setKills(kills);

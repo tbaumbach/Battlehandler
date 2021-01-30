@@ -10,6 +10,7 @@ import java.util.Map;
 
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipPureFunctions;
+import spaceraze.servlethelper.handlers.GameWorldHandler;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
@@ -111,7 +112,7 @@ public class LandBattle {
     	List<OwnTroop> ownTroops1 = new ArrayList<>(ownTroops);
     	List<EnemyTroop> enemyTroops1 = new ArrayList<>(enemyTroops);
 		String enemyName = enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null ? null : enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner().getName();
-		String enemyFaction = enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null ? null : enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner().getFaction().getName();
+		String enemyFaction = enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null ? null : GameWorldHandler.getFactionByKey(enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner().getFactionKey(), gameWorld).getName();
 		return new spaceraze.world.report.landbattle.LandBattleReport(ownTroops1, enemyTroops1, enemyName, enemyFaction, isDefending);
 		
 	}

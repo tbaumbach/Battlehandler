@@ -3,6 +3,7 @@ package spaceraze.battlehandler.spacebattle;
 import spaceraze.servlethelper.game.vip.VipPureFunctions;
 import spaceraze.servlethelper.game.planet.PlanetPureFunctions;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
+import spaceraze.servlethelper.handlers.GameWorldHandler;
 import spaceraze.util.move.FindPlanetCriterion;
 import spaceraze.world.Galaxy;
 import spaceraze.world.Planet;
@@ -48,7 +49,7 @@ public class TaskForceHandler {
                 .forEach(spaceship -> taskForceSpaceShips
                         .add(new TaskForceSpaceShip(spaceship, VipPureFunctions.findAllVIPsOnShip(spaceship, galaxy.getAllVIPs()))));
 
-        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? aPlayer.getFaction().getName() : null, taskForceSpaceShips);
+        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? GameWorldHandler.getFactionByKey(aPlayer.getFactionKey(), galaxy.getGameWorld()).getName() : null, taskForceSpaceShips);
 
         if (tf.getTotalNrShips() == 0) { // om inga skepp returnera null = finns ingen taskforce
             return null;
