@@ -1,0 +1,31 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>spaceraze</groupId>
+  <artifactId>battlehandler</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>Battlehandler</name>
+  <description>Handler battles in spaceraze</description>
+  <properties>
+      <maven.compiler.target>13</maven.compiler.target>
+      <maven.compiler.source>13</maven.compiler.source>
+      <maven.complier.release>13</maven.complier.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+  	<dependency>
+  		<groupId>spaceraze</groupId>
+		<artifactId>utils</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+		<groupId>spaceraze</groupId>
+		<artifactId>world</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+      <dependency>
+          <groupId>spaceraze</groupId>
+          <artifactId>servlethelper</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+      </dependency>
+  </dependencies>
+</project>
