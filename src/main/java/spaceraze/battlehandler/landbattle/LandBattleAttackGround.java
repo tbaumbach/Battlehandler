@@ -34,7 +34,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				Logger.finer("targetTroop: " + targetTroop.getTroop().getName());
 				int attMultiplier = Functions.getRandomInt(1, 20);
 				Logger.finer("attMultiplier: " + attMultiplier);
-				int defMultiplier = 20-attMultiplier-TroopPureFunctions.getTroopTypeByKey(targetTroop.getTroop().getTypeKey(), gameWorld).getFiringBackPenalty();
+				int defMultiplier = 20-attMultiplier-TroopPureFunctions.getTroopTypeByUuid(targetTroop.getTroop().getTypeUuid(), gameWorld).getFiringBackPenalty();
 				if (defMultiplier < 0){
 					defMultiplier = 0;
 				}
@@ -48,9 +48,9 @@ public class LandBattleAttackGround extends LandBattleAttack {
 					defVIPBonus = attVipBonus;
 				}
 				
-				int attackerActualDamage = getActualDamage(attacker.getTroop(), TroopPureFunctions.getTroopTypeByKey(targetTroop.getTroop().getTypeKey(), gameWorld).isArmor(), attMultiplier, defender, resistance, attVIPBonus);
+				int attackerActualDamage = getActualDamage(attacker.getTroop(), TroopPureFunctions.getTroopTypeByUuid(targetTroop.getTroop().getTypeUuid(), gameWorld).isArmor(), attMultiplier, defender, resistance, attVIPBonus);
 				Logger.finer("attackerActualDamage: " + attackerActualDamage);
-				int defenderActualDamage = getActualDamage(targetTroop.getTroop(), TroopPureFunctions.getTroopTypeByKey(attacker.getTroop().getTypeKey(), gameWorld).isArmor(), defMultiplier, !defender, resistance, defVIPBonus);
+				int defenderActualDamage = getActualDamage(targetTroop.getTroop(), TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).isArmor(), defMultiplier, !defender, resistance, defVIPBonus);
 				Logger.finer("defenderActualDamage: " + defenderActualDamage);
 				String result1 = TroopMutator.hit(targetTroop.getTroop(), attackerActualDamage, false, !defender, resistance);
 				Logger.finer(targetTroop.getTroop().getName() + ": " + result1);
@@ -112,14 +112,14 @@ public class LandBattleAttackGround extends LandBattleAttack {
 		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
 				.troopAttack(TroopAttack.builder()
 						.name(attacker.getTroop().getName())
-						.typeName(TroopPureFunctions.getTroopTypeByKey(attacker.getTroop().getTypeKey(), gameWorld).getName())
+						.typeName(TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).getName())
 						.damageCapacity(attacker.getTroop().getDamageCapacity())
 						.currentDamageCapacity(attacker.getTroop().getCurrentDamageCapacity())
 						.artillery(isArtillery)
 						.own(true)
 						.build())
 				.troopTarget(TroopTarget.builder()
-						.typeName(TroopPureFunctions.getTroopTypeByKey(targetTroop.getTroop().getTypeKey(), gameWorld).getName())
+						.typeName(TroopPureFunctions.getTroopTypeByUuid(targetTroop.getTroop().getTypeUuid(), gameWorld).getName())
 						.damageCapacity(targetTroop.getTroop().getDamageCapacity())
 						.currentDamageCapacity(targetTroop.getTroop().getCurrentDamageCapacity())
 						.own(false).build())
@@ -133,7 +133,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 	public static spaceraze.world.report.landbattle.LandBattleAttack createLandBattleAttackForDefendingTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery, GameWorld gameWorld) {
 		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
 				.troopAttack(TroopAttack.builder()
-						.typeName(TroopPureFunctions.getTroopTypeByKey(attacker.getTroop().getTypeKey(), gameWorld).getName())
+						.typeName(TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).getName())
 						.damageCapacity(attacker.getTroop().getDamageCapacity())
 						.currentDamageCapacity(attacker.getTroop().getCurrentDamageCapacity())
 						.artillery(isArtillery)
@@ -141,7 +141,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 						.build())
 				.troopTarget(TroopTarget.builder()
 						.name(targetTroop.getTroop().getName())
-						.typeName(TroopPureFunctions.getTroopTypeByKey(targetTroop.getTroop().getTypeKey(), gameWorld).getName())
+						.typeName(TroopPureFunctions.getTroopTypeByUuid(targetTroop.getTroop().getTypeUuid(), gameWorld).getName())
 						.damageCapacity(targetTroop.getTroop().getDamageCapacity())
 						.currentDamageCapacity(targetTroop.getTroop().getCurrentDamageCapacity())
 						.own(true).build())

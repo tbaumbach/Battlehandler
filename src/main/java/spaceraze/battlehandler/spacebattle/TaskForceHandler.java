@@ -45,11 +45,11 @@ public class TaskForceHandler {
         // vara på en troop.
         List<TaskForceSpaceShip> taskForceSpaceShips = new ArrayList<>();
         SpaceshipPureFunctions.getPlayersSpaceshipsOnPlanet(aPlayer, aPlanet, galaxy.getSpaceships()).stream()
-                .filter(spaceship -> (!SpaceshipPureFunctions.getSpaceshipTypeByKey(spaceship.getTypeKey(), galaxy.getGameWorld()).isCivilian() || includeCivilians))
+                .filter(spaceship -> (!SpaceshipPureFunctions.getSpaceshipTypeByUuid(spaceship.getTypeUuid(), galaxy.getGameWorld()).isCivilian() || includeCivilians))
                 .forEach(spaceship -> taskForceSpaceShips
                         .add(new TaskForceSpaceShip(spaceship, VipPureFunctions.findAllVIPsOnShip(spaceship, galaxy.getAllVIPs()))));
 
-        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? GameWorldHandler.getFactionByKey(aPlayer.getFactionKey(), galaxy.getGameWorld()).getName() : null, taskForceSpaceShips);
+        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? GameWorldHandler.getFactionByUuid(aPlayer.getFactionUuid(), galaxy.getGameWorld()).getName() : null, taskForceSpaceShips);
 
         if (tf.getTotalNrShips() == 0) { // om inga skepp returnera null = finns ingen taskforce
             return null;

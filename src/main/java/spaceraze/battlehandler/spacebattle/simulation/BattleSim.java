@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 import spaceraze.battlehandler.spacebattle.SpaceBattlePerformer;
+import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
@@ -46,19 +47,12 @@ public class BattleSim extends Thread {
 		this.battleSimListener = aBattleSimListener;
 		this.gameWorld = aGameWorld;
 	}
-	/*
-	 * public BattleSim(double tf1wins, double tf2wins,String message,int
-	 * tf1CostBuy,int tf1CostSupply,int tf2CostBuy,int tf2CostSupply) { this.tf1wins
-	 * = tf1wins; this.tf2wins = tf2wins; this.message = message; this.tf1CostBuy =
-	 * tf1CostBuy; this.tf1CostSupply = tf1CostSupply; this.tf2CostBuy = tf2CostBuy;
-	 * this.tf2CostSupply = tf2CostSupply; }
-	 */
 	
 	private static String addAShip(String typeName, TaskForce tf, GameWorld gameWorld, boolean screened,
 			int techBonus, int kills, int damaged, List<String> vipNames) {
 		Logger.finer("BattleSim addAShip: " + typeName + " " + screened + " " + techBonus + " " + vipNames.size());
 		String message = null;
-		SpaceshipType sst = gameWorld.getSpaceshipTypeByName(typeName);
+		SpaceshipType sst = SpaceshipPureFunctions.getSpaceshipTypeByName(typeName, gameWorld);
 		if (sst == null) {
 			// try to find by short name
 			sst = gameWorld.getSpaceshipTypeByShortName(typeName);

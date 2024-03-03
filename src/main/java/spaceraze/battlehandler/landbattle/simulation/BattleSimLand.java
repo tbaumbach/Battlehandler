@@ -329,7 +329,7 @@ public class BattleSimLand extends Thread {
             if (support) {
                 total += troop.getTroop().getUpkeep();
             } else {
-                total += TroopPureFunctions.getCostBuild(TroopPureFunctions.getTroopTypeByKey(troop.getTroop().getTypeKey(), gameWorld), 0);
+                total += TroopPureFunctions.getCostBuild(TroopPureFunctions.getTroopTypeByUuid(troop.getTroop().getTypeUuid(), gameWorld), 0);
             }
         }
         return total;

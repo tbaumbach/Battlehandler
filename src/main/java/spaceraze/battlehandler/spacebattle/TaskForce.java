@@ -285,9 +285,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		}
 		// if shot isn't aimed, perform shot as normal, i.e. use target weight etc
 		if (!aimedShot) {
-			int targetingWeight = getTotalTargetingWeight(SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getTargetingType(), screenOnly);
+			int targetingWeight = getTotalTargetingWeight(SpaceshipPureFunctions.getSpaceshipTypeByUuid(firingShip.getSpaceship().getTypeUuid(), gameWorld).getTargetingType(), screenOnly);
 			int targetIndex = Math.abs(r.nextInt()) % targetingWeight;
-			targetShip = getTargetedShip(SpaceshipPureFunctions.getSpaceshipTypeByKey(firingShip.getSpaceship().getTypeKey(), gameWorld).getTargetingType(), targetIndex, screenOnly);
+			targetShip = getTargetedShip(SpaceshipPureFunctions.getSpaceshipTypeByUuid(firingShip.getSpaceship().getTypeUuid(), gameWorld).getTargetingType(), targetIndex, screenOnly);
 		}
 		if (targetShip.getSpaceship().isScreened() && onlyFirstLine()) {
 			Logger.severe("Screened ship hit!!! " + targetShip.getSpaceship().getUniqueName() + " aimedShot: " + aimedShot);
@@ -340,7 +340,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	private SpaceshipTarget createSpaceShipTarget(Spaceship spaceship, boolean isOwn, GameWorld gameWorld){
 		return SpaceshipTarget.builder()
 				.name(isOwn? spaceship.getName() : null)
-				.typeName(SpaceshipPureFunctions.getSpaceshipTypeByKey(spaceship.getTypeKey(), gameWorld).getName())
+				.typeName(SpaceshipPureFunctions.getSpaceshipTypeByUuid(spaceship.getTypeUuid(), gameWorld).getName())
 				.currentShield(spaceship.getCurrentShields())
 				.shield(SpaceshipPureFunctions.getShields(spaceship, gameWorld))
 				.currentDamageCapacity(spaceship.getCurrentDc())
@@ -396,7 +396,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		totalAimBonus += getSpaceshipAimBonus(gameWorld);
 		VIP aimBonusVip = getAimBonusVIP(gameWorld);
 		if (aimBonusVip != null) {
-			totalAimBonus += VipPureFunctions.getVipTypeByKey(aimBonusVip.getTypeKey(), gameWorld).getAimBonus();
+			totalAimBonus += VipPureFunctions.getVipTypeByUuid(aimBonusVip.getTypeUuid(), gameWorld).getAimBonus();
 		}
 		return totalAimBonus;
 	}
@@ -519,11 +519,11 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		if (totalBombardment > 0) {
 			// check if bombardment VIP exist in fleet
 			VIP bombVIP = allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-					.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getBombardmentBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getBombardmentBonus() ? vip1 : vip2).orElse(null);
+					.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByUuid(vip1.getTypeUuid(), gameWorld).getBombardmentBonus() > VipPureFunctions.getVipTypeByUuid(vip2.getTypeUuid(), gameWorld).getBombardmentBonus() ? vip1 : vip2).orElse(null);
 					//TODO 2019-12-26 Kolla att detta fungerar.
 					//galaxy.findHighestVIPbombardmentBonus(allShips);
 			if (bombVIP != null) {
-				totalBombardment += VipPureFunctions.getVipTypeByKey(bombVIP.getTypeKey(), gameWorld).getBombardmentBonus();
+				totalBombardment += VipPureFunctions.getVipTypeByUuid(bombVIP.getTypeUuid(), gameWorld).getBombardmentBonus();
 			}
 		}
 		return totalBombardment;
@@ -645,7 +645,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	// increases the chance to fire against the most damage ship.
 	public int getSpaceshipAimBonus(GameWorld gameWorld) {
-		return allShips.stream().map(ship -> SpaceshipPureFunctions.getSpaceshipTypeByKey(ship.getSpaceship().getTypeKey(), gameWorld).getAimBonus()).reduce(Integer::max).get();
+		return allShips.stream().map(ship -> SpaceshipPureFunctions.getSpaceshipTypeByUuid(ship.getSpaceship().getTypeUuid(), gameWorld).getAimBonus()).reduce(Integer::max).get();
 		/*TODO testa av för att sedan ta bort.
 		int tmpAimBonus = 0;
 		for (int i = 0; i < allShips.size(); i++) {
@@ -661,9 +661,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	public int getVIPInitiativeBonus(GameWorld gameWorld) {
 		
 		VIP initBonusVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() != SpaceShipSize.SQUADRON).flatMap(ship -> ship.getVipOnShip().stream())
-		.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitBonus() ? vip1 : vip2).orElse(null);
+		.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByUuid(vip1.getTypeUuid(), gameWorld).getInitBonus() > VipPureFunctions.getVipTypeByUuid(vip2.getTypeUuid(), gameWorld).getInitBonus() ? vip1 : vip2).orElse(null);
 		
-		int initBonusCapitalShip = initBonusVip == null ? 0 : VipPureFunctions.getVipTypeByKey(initBonusVip.getTypeKey(), gameWorld).getInitBonus();
+		int initBonusCapitalShip = initBonusVip == null ? 0 : VipPureFunctions.getVipTypeByUuid(initBonusVip.getTypeUuid(), gameWorld).getInitBonus();
 		
 		/*
 		int initBonusCapitalShip = 0;
@@ -679,9 +679,9 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		
 		VIP initBonusSquadronVip = allShips.stream().filter(ship -> ship.getSpaceship().getSize() == SpaceShipSize.SQUADRON)
 				.filter(ship -> !isScreened(ship.getSpaceship())).flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitFighterSquadronBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitFighterSquadronBonus() ? vip1 : vip2).orElse(null);
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByUuid(vip1.getTypeUuid(), gameWorld).getInitFighterSquadronBonus() > VipPureFunctions.getVipTypeByUuid(vip2.getTypeUuid(), gameWorld).getInitFighterSquadronBonus() ? vip1 : vip2).orElse(null);
 		
-		int initBonusSquadron = initBonusSquadronVip == null ? 0 : VipPureFunctions.getVipTypeByKey(initBonusSquadronVip.getTypeKey(), gameWorld).getInitFighterSquadronBonus();
+		int initBonusSquadron = initBonusSquadronVip == null ? 0 : VipPureFunctions.getVipTypeByUuid(initBonusSquadronVip.getTypeUuid(), gameWorld).getInitFighterSquadronBonus();
 		
 		/*
 		int initBonusSquadron = 0;
@@ -720,8 +720,8 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	public int getVIPInitDefence(GameWorld gameWorld) {
 		VIP vip = allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getInitDefence() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getInitDefence() ? vip1 : vip2).orElse(null);
-		return vip == null ?  0 : VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).getInitDefence();
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByUuid(vip1.getTypeUuid(), gameWorld).getInitDefence() > VipPureFunctions.getVipTypeByUuid(vip2.getTypeUuid(), gameWorld).getInitDefence() ? vip1 : vip2).orElse(null);
+		return vip == null ?  0 : VipPureFunctions.getVipTypeByUuid(vip.getTypeUuid(), gameWorld).getInitDefence();
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
 		/*
 		int initDefence = 0;
@@ -747,7 +747,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	// increases the chance to fire against the most damage ship.
 	public VIP getAimBonusVIP(GameWorld gameWorld) {
 		return allShips.stream().flatMap(ship -> ship.getVipOnShip().stream())
-				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByKey(vip1.getTypeKey(), gameWorld).getAimBonus() > VipPureFunctions.getVipTypeByKey(vip2.getTypeKey(), gameWorld).getAimBonus() ? vip1 : vip2).orElse(null);
+				.reduce((vip1, vip2) -> VipPureFunctions.getVipTypeByUuid(vip1.getTypeUuid(), gameWorld).getAimBonus() > VipPureFunctions.getVipTypeByUuid(vip2.getTypeUuid(), gameWorld).getAimBonus() ? vip1 : vip2).orElse(null);
 		//TODO 2019-12-26 Verifiera att detta fungerar som det är tänkt.
 		/*
 		VIP highestAimVIP = null;
@@ -855,12 +855,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			if (shipToBeHit.getSpaceship().isDestroyed()) {
 				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral(
 						"Your ship " + shipToBeHit.getSpaceship().getName() + " on " + aPlanet.getName() + " was destroyed when hit ("
-								+ damageNoArmor + ") by an enemy " + BuildingPureFunctions.getBuildingType(aBuilding.getTypeKey(), galaxy.getGameWorld()).getName() + ".");
+								+ damageNoArmor + ") by an enemy " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + ".");
 				if (aPlanet.getPlayerInControl() != null) {
 					aPlanet.getPlayerInControl()
-							.addToGeneral("Your " + BuildingPureFunctions.getBuildingType(aBuilding.getTypeKey(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
+							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
 									+ "hit (" + damageNoArmor + ") and destroyed an enemy "
-									+ SpaceshipPureFunctions.getSpaceshipTypeByKey(shipToBeHit.getSpaceship().getTypeKey(), galaxy.getGameWorld()).getName() + ".");
+									+ SpaceshipPureFunctions.getSpaceshipTypeByUuid(shipToBeHit.getSpaceship().getTypeUuid(), galaxy.getGameWorld()).getName() + ".");
 					// är detta rätt? ser skumt ut
 				}
 				// check for destroyed squadrons in the carrier hit
@@ -898,12 +898,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 				}
 			} else {
 				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral("Your ship " + shipToBeHit.getSpaceship().getName() + " on " + aPlanet.getName()
-						+ " was hit by an enemy " + BuildingPureFunctions.getBuildingType(aBuilding.getTypeKey(), galaxy.getGameWorld()).getName() + " and the damage ("
+						+ " was hit by an enemy " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " and the damage ("
 						+ damageNoArmor + ") " + damagedStatus + ".");
 				if (aPlanet.getPlayerInControl() != null) {
 					aPlanet.getPlayerInControl()
-							.addToGeneral("Your " + BuildingPureFunctions.getBuildingType(aBuilding.getTypeKey(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
-									+ " hit an enemy " + SpaceshipPureFunctions.getSpaceshipTypeByKey(shipToBeHit.getSpaceship().getTypeKey(), galaxy.getGameWorld()).getName() + " and the damage ("
+							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
+									+ " hit an enemy " + SpaceshipPureFunctions.getSpaceshipTypeByUuid(shipToBeHit.getSpaceship().getTypeUuid(), galaxy.getGameWorld()).getName() + " and the damage ("
 									+ damageNoArmor + ") " + damagedStatus + ".");
 				}
 			}
@@ -925,7 +925,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		// randomize damage
 		int actualDamage = (int) Math.round(baseDamage * (multiplier / 10.0));
 		Logger.finest("Damage after multiplier: " + actualDamage + " ship hit: " + targetShip.getName()
-				+ " firing Building (cannon): " + BuildingPureFunctions.getBuildingType(aBuilding.getTypeKey(), galaxy.getGameWorld()).getName());
+				+ " firing Building (cannon): " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName());
 		if (actualDamage < 1) {
 			actualDamage = 1;
 		}
@@ -967,7 +967,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	}
 	
 	private boolean vipAllowShipToAttackScreened(VIP vip, Spaceship ship, GameWorld gameWorld) {
-		return (ship.getSize() == SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).isAttackScreenedSquadron()) || (ship.getSize() != SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByKey(vip.getTypeKey(), gameWorld).isAttackScreenedCapital());
+		return (ship.getSize() == SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByUuid(vip.getTypeUuid(), gameWorld).isAttackScreenedSquadron()) || (ship.getSize() != SpaceShipSize.SQUADRON && VipPureFunctions.getVipTypeByUuid(vip.getTypeUuid(), gameWorld).isAttackScreenedCapital());
 	}
 	
 	/**
