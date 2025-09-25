@@ -24,6 +24,11 @@
 	</dependency>
       <dependency>
           <groupId>spaceraze</groupId>
+          <artifactId>game</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+          <groupId>spaceraze</groupId>
           <artifactId>servlethelper</artifactId>
           <version>0.0.1-SNAPSHOT</version>
       </dependency>

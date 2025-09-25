@@ -2,6 +2,7 @@ package spaceraze.battlehandler.landbattle;
 
 import java.util.List;
 
+import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
@@ -22,7 +23,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 	}
  
 	@Override
-	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld) {
+	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap) {
 		Logger.finer("performAttack(ground)");
 		if (TroopPureFunctions.isDestroyed(attacker.getTroop())){
 			Logger.finer("Attacker already destroyed");
@@ -52,7 +53,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				Logger.finer("attackerActualDamage: " + attackerActualDamage);
 				int defenderActualDamage = getActualDamage(targetTroop.getTroop(), TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).isArmor(), defMultiplier, !defender, resistance, defVIPBonus);
 				Logger.finer("defenderActualDamage: " + defenderActualDamage);
-				String result1 = TroopMutator.hit(targetTroop.getTroop(), attackerActualDamage, false, !defender, resistance);
+				String result1 = TroopMutator.hit(targetTroop.getTroop(), attackerActualDamage, false, !defender, resistance, galaxyMap);
 				Logger.finer(targetTroop.getTroop().getName() + ": " + result1);
 				if (TroopPureFunctions.isDestroyed(targetTroop.getTroop())){
 					TroopMutator.addKill(attacker.getTroop());
@@ -62,7 +63,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 					//attacker.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
 					//targetTroop.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
 				}
-				String result2 = TroopMutator.hit(attacker.getTroop(), defenderActualDamage, false, defender, resistance);
+				String result2 = TroopMutator.hit(attacker.getTroop(), defenderActualDamage, false, defender, resistance, galaxyMap);
 				Logger.finer(attacker.getTroop().getName() + ": " + result2);
 				if (TroopPureFunctions.isDestroyed(attacker.getTroop())){
 					TroopMutator.addKill(targetTroop.getTroop());

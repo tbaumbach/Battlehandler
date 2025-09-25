@@ -2,6 +2,7 @@ package spaceraze.battlehandler.landbattle;
 
 import java.util.List;
 
+import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
@@ -21,7 +22,7 @@ public class LandBattleAttackArtillery extends LandBattleAttack {
 	}
 	
 	@Override
-	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld) {
+	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap) {
 		if (TroopPureFunctions.isDestroyed(attacker.getTroop())){
 			Logger.finer("Attacker already destroyed");
 		}else{
@@ -39,7 +40,7 @@ public class LandBattleAttackArtillery extends LandBattleAttack {
 				}
 				
 				int actualDamage = getArtilleryActualDamage(attacker.getTroop(), multiplier, defender, resistance, attVIPBonus);
-				String result = TroopMutator.hit(targetTroop.getTroop(), actualDamage, true, !defender, resistance);
+				String result = TroopMutator.hit(targetTroop.getTroop(), actualDamage, true, !defender, resistance, galaxyMap);
 				Logger.finer(result);
 				if (TroopPureFunctions.isDestroyed(targetTroop.getTroop())){
 					TroopMutator.addKill(attacker.getTroop());

@@ -12,7 +12,9 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 
+import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.BuildingPureFunctions;
+import spaceraze.servlethelper.game.planet.PlanetPureFunctions;
 import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.servlethelper.game.troop.TroopMutator;
@@ -254,7 +256,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		return returnss;
 	}
 
-	public String shipHit(TaskForce tfshooting, TaskForceSpaceShip firingShip, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld) {
+	public String shipHit(TaskForce tfshooting, TaskForceSpaceShip firingShip, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld, GalaxyMap galaxyMap) {
 		Logger.finest("called, firingShip: " + firingShip.getSpaceship().getName());
 
 		// returnera "destroyed" om inga skepp finns kvar i tf:n
@@ -310,7 +312,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 		int actualDamage = SpaceshipMutator.getActualDamage(firingShip.getSpaceship(), gameWorld, targetShip.getSpaceship(), multiplier, afterShieldsDamageRatio);
 		activeAttackReport.setActualDamage(actualDamage);
 		targetAttackReport.setActualDamage(actualDamage);
-		String damagedStatus = shipHit(targetShip.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, targetShip.getSpaceship().getOwner() != null ? targetShip.getSpaceship().getOwner().getGalaxy() : null, gameWorld);
+		String damagedStatus = shipHit(targetShip.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, targetShip.getSpaceship().getOwner() != null ? targetShip.getSpaceship().getOwner().getGalaxy() : null, gameWorld, galaxyMap);
 		Logger.finest("multiplier=" + multiplier + " damageNoArmor=" + damageNoArmor + " damageLeftAfterShields="
 				+ damageLeftAfterShields + " afterShieldsDamageRatio=" + afterShieldsDamageRatio + " actualDamage="
 				+ actualDamage + " damagedStatus=" + damagedStatus);
@@ -816,9 +818,10 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 	}
 
 	//TODO 2019-12-26 Ska den här metoden ligga i TaskForce? behöver vi en taskForce för detta endamål?
-	public void incomingCannonFire(Planet aPlanet, Building aBuilding, Galaxy galaxy) {
+	public void incomingCannonFire(Planet planet, Building aBuilding, Galaxy galaxy, GalaxyMap galaxyMap) {
 		if (allShips != null) {
-			List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream()
+            String planetName = PlanetPureFunctions.getPlanetName(galaxyMap, planet.getMapPlanetUuid());
+            List<TaskForceSpaceShip> shipsPossibleToHit = allShips.stream()
 					.filter(ship -> SpaceshipPureFunctions.isCapitalShip(ship.getSpaceship(), galaxy.getGameWorld())).collect(Collectors.toList());
 			
 			Logger.finer("shipsPossibleToHit.size(): " + shipsPossibleToHit.size());
@@ -847,18 +850,18 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			// klarade av hela skadan. om damageLeftAfterShields är = 0 ss skall
 			// damageNoArmor dras av skölden. annars stts skölden till 0 och actualDamage
 			// dras av hullet.
-			String damagedStatus = shipHit(shipToBeHit.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, galaxy, galaxy.getGameWorld());
+			String damagedStatus = shipHit(shipToBeHit.getSpaceship(), actualDamage, damageLeftAfterShields, damageNoArmor, galaxy, galaxy.getGameWorld(), galaxyMap);
 			totalDamage += actualDamage;
 			Logger.finer("multiplier=" + multiplier + " damageNoArmor=" + damageNoArmor + " damageLeftAfterShields="
 					+ damageLeftAfterShields + " afterShieldsDamageRatio=" + afterShieldsDamageRatio + " actualDamage="
 					+ actualDamage + " damagedStatus=" + damagedStatus);
 			if (shipToBeHit.getSpaceship().isDestroyed()) {
 				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral(
-						"Your ship " + shipToBeHit.getSpaceship().getName() + " on " + aPlanet.getName() + " was destroyed when hit ("
+						"Your ship " + shipToBeHit.getSpaceship().getName() + " on " + planetName + " was destroyed when hit ("
 								+ damageNoArmor + ") by an enemy " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + ".");
-				if (aPlanet.getPlayerInControl() != null) {
-					aPlanet.getPlayerInControl()
-							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
+				if (planet.getPlayerInControl() != null) {
+					planet.getPlayerInControl()
+							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + planetName
 									+ "hit (" + damageNoArmor + ") and destroyed an enemy "
 									+ SpaceshipPureFunctions.getSpaceshipTypeByUuid(shipToBeHit.getSpaceship().getTypeUuid(), galaxy.getGameWorld()).getName() + ".");
 					// är detta rätt? ser skumt ut
@@ -897,12 +900,12 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 					isDestroyed = true;
 				}
 			} else {
-				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral("Your ship " + shipToBeHit.getSpaceship().getName() + " on " + aPlanet.getName()
+				galaxy.getPlayerByGovenorName(getPlayerName()).addToGeneral("Your ship " + shipToBeHit.getSpaceship().getName() + " on " + planetName
 						+ " was hit by an enemy " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " and the damage ("
 						+ damageNoArmor + ") " + damagedStatus + ".");
-				if (aPlanet.getPlayerInControl() != null) {
-					aPlanet.getPlayerInControl()
-							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + aPlanet.getName()
+				if (planet.getPlayerInControl() != null) {
+					planet.getPlayerInControl()
+							.addToGeneral("Your " + BuildingPureFunctions.getBuildingTypeByUuid(aBuilding.getTypeUuid(), galaxy.getGameWorld()).getName() + " at " + planetName
 									+ " hit an enemy " + SpaceshipPureFunctions.getSpaceshipTypeByUuid(shipToBeHit.getSpaceship().getTypeUuid(), galaxy.getGameWorld()).getName() + " and the damage ("
 									+ damageNoArmor + ") " + damagedStatus + ".");
 				}
@@ -998,7 +1001,7 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 
 	// returnera sträng om skottets effekt, förstört, skadat, togs upp av
 	// sköldarna
-	public String shipHit(Spaceship spaceship, int damage, int damageAfterShields, int damageNoArmor, Galaxy galaxy, GameWorld gameWorld) {
+	public String shipHit(Spaceship spaceship, int damage, int damageAfterShields, int damageNoArmor, Galaxy galaxy, GameWorld gameWorld, GalaxyMap galaxyMap) {
 		String returnString = "";
 		Logger.finer( "shipHit currentShields "
 				+ spaceship.getCurrentShields() + " damage " + damage + " currentdc "
@@ -1019,8 +1022,8 @@ public class TaskForce implements Serializable, Cloneable { // serialiseras denn
 			} else {
 				spaceship.setCurrentDc(0);
 				if (spaceship.getOwner() != null) {
-					VipMutator.checkVIPsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy);
-					TroopMutator.checkTroopsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy);
+					VipMutator.checkVIPsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy, galaxyMap);
+					TroopMutator.checkTroopsInDestroyedShips(spaceship, spaceship.getOwner(), galaxy, galaxyMap);
 				}
 			}
 		}

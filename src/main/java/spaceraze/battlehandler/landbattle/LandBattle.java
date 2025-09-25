@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipPureFunctions;
 import spaceraze.servlethelper.handlers.GameWorldHandler;
@@ -28,8 +29,9 @@ public class LandBattle {
 	private LandBattleGroup defBG;
 	private LandBattleGroup attBG;
 	private GameWorld gameWorld;
+    private GalaxyMap galaxyMap;
 	
-	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistance, int currentTurn, GameWorld gameWorld){
+	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistance, int currentTurn, GameWorld gameWorld, GalaxyMap galaxyMap){
 		// create battle groups
     	this.defBG = new LandBattleGroup(defendingTaskForceTroops, gameWorld);
     	this.attBG = new LandBattleGroup(attackingTaskForceTroops, gameWorld);
@@ -38,6 +40,7 @@ public class LandBattle {
 		this.planetResistance = resistance;
 		this.currentTurn = currentTurn;
 		this.gameWorld = gameWorld;
+        this.galaxyMap = galaxyMap;
 	}
 	
 	public void performBattle(){
@@ -130,7 +133,7 @@ public class LandBattle {
 	private void performAttacks(List<LandBattleAttack> attackList){
 		for (LandBattleAttack attack : attackList) {
 			Logger.finer("***** " + attack.toString() + " *****");
-			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()), gameWorld);
+			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()), gameWorld, galaxyMap);
 		}
 	}
 	

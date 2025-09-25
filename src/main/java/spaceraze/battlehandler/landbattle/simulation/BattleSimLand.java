@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 
 import spaceraze.battlehandler.landbattle.LandBattle;
 import spaceraze.battlehandler.landbattle.TaskForceTroop;
+import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipMutator;
@@ -41,10 +42,13 @@ public class BattleSimLand extends Thread {
     private BattleSimLandListener battleSimLandListener;
     private boolean showTrace;
     private int planetResistance;
+    private GalaxyMap galaxyMap;
 
-    public BattleSimLand(BattleSimLandListener aBattleSimLandListener, GameWorld aGameWorld) {
+    public BattleSimLand(BattleSimLandListener aBattleSimLandListener, GameWorld aGameWorld, GalaxyMap galaxyMap) {
         this.battleSimLandListener = aBattleSimLandListener;
         this.gameWorld = aGameWorld;
+        this.galaxyMap = galaxyMap;
+
         //battleSimMap = createMap();
     }
 
@@ -229,7 +233,7 @@ public class BattleSimLand extends Thread {
 						countWinsPlayer1++;
 					} else {
 						// perform land battle
-						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn, gameWorld);
+						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn, gameWorld, galaxyMap);
 						battle.performBattle();
 						currentTurn++;
 					}

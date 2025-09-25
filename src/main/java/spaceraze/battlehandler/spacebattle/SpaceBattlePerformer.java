@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import spaceraze.map.GalaxyMap;
+import spaceraze.servlethelper.game.planet.PlanetPureFunctions;
 import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.util.general.Functions;
@@ -33,13 +35,13 @@ public class SpaceBattlePerformer {
 	
 	// Called in simulationMode
 	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, GameWorld gameWorld){
-		performCombat(tf1, tf2, initMethod, null, gameWorld, null);
+		performCombat(tf1, tf2, initMethod, null, gameWorld, null, null);
 		
 	}
 	
-	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, String planetName, GameWorld gameWorld, Galaxy galaxy){
+	public void performCombat(TaskForce tf1, TaskForce tf2, InitiativeMethod initMethod, String planetUuid, GameWorld gameWorld, Galaxy galaxy, GalaxyMap galaxyMap){
 		
-	      Logger.fine(planetName);
+	      Logger.fine(planetUuid);
 	      //this.galaxy = galaxy;
 	      this.initMethod = initMethod;
 	      
@@ -67,7 +69,7 @@ public class SpaceBattlePerformer {
 	    	attackReports2.add(attackReport2);
 
 	        if (getShootingSide(tf1, tf2, r, gameWorld) == 1){
-	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2, gameWorld, galaxy); // returnerar null om ett skepp flyr istället för att skjuta
+	          firingShip = getFiringShip(tf1, tf2, r, attackReport1, attackReport2, gameWorld, galaxy, galaxyMap); // returnerar null om ett skepp flyr istället för att skjuta
 	          if (firingShip != null){
 	        	  Logger.finest("firingShip: " + firingShip.getSpaceship().getName() + " ");
 	          }else{
@@ -75,15 +77,15 @@ public class SpaceBattlePerformer {
 	          }
 	          tf1status = tf1.getStatus();
 	          if (firingShip != null){ // tf2 är beskjutet
-	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2, gameWorld);
+	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2, gameWorld, galaxyMap);
 	          }else{   // om inget skepp returneras betyder det att tf1 håller på att retirera
 	            tf2status = FIGHTING;
 	          }
 	        }else{
-	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1, gameWorld, galaxy);
+	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1, gameWorld, galaxy, galaxyMap);
 	          tf2status = tf2.getStatus();
 	          if (firingShip != null){ // tf1 är beskjutet
-	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1, gameWorld);
+	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1, gameWorld, galaxyMap);
 	          }else{   // om inget skepp returneras betyder det att tf2 håller på att retirera
 	            tf1status = FIGHTING;
 	          }
@@ -226,7 +228,7 @@ public class SpaceBattlePerformer {
 		return tf1RelSizeMod / (tf1RelSizeMod + tf2RelSizeMod);
     }
     
-    public TaskForceSpaceShip getFiringShip(TaskForce attackerTF, TaskForce opponentTF, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld, Galaxy galaxy){
+    public TaskForceSpaceShip getFiringShip(TaskForce attackerTF, TaskForce opponentTF, Random r, SpaceBattleAttack activeAttackReport, SpaceBattleAttack targetAttackReport, GameWorld gameWorld, Galaxy galaxy, GalaxyMap galaxyMap){
     	
     	TaskForceSpaceShip firingShip ;
         if (!attackerTF.isRunningAway()){
@@ -271,7 +273,7 @@ public class SpaceBattlePerformer {
         		SpaceshipPureFunctions.getSpaceshipTypeByUuid(firingShip.getSpaceship().getTypeUuid(), gameWorld).getName(),
         		attackerTF.getDestroyedShips().contains(firingShip),
         		true,
-        		firingShip.getSpaceship().getRetreatingTo() == null ? null : firingShip.getSpaceship().getRetreatingTo().getName()));
+        		firingShip.getSpaceship().getRetreatingTo() == null ? null : PlanetPureFunctions.getPlanetName(galaxyMap, firingShip.getSpaceship().getRetreatingTo().getMapPlanetUuid())));
         
         targetAttackReport.setSpaceshipAttack(new SpaceshipAttack(SpaceshipPureFunctions.getSpaceshipTypeByUuid(firingShip.getSpaceship().getTypeUuid(), gameWorld).getName(), attackerTF.getDestroyedShips().contains(firingShip), false));
         
