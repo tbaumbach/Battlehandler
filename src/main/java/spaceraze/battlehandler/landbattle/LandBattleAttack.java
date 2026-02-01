@@ -3,6 +3,7 @@ package spaceraze.battlehandler.landbattle;
 import java.util.LinkedList;
 import java.util.List;
 
+import spaceraze.game.Galaxy;
 import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
@@ -25,7 +26,7 @@ public abstract class LandBattleAttack {
 		return attackType;
 	}
 	
-	public abstract void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap);
+	public abstract void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap, Galaxy galaxy);
 	
 	protected TaskForceTroop getRandomOpponent(){
 		List<TaskForceTroop> okOpponents = getNonDestroyedOpponents();

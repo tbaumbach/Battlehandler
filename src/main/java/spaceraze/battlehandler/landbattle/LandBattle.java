@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import spaceraze.game.Galaxy;
 import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipPureFunctions;
@@ -15,12 +16,12 @@ import spaceraze.servlethelper.handlers.GameWorldHandler;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Troop;
+import spaceraze.game.Troop;
 import spaceraze.world.enums.TroopTargetingType;
 import spaceraze.world.enums.TypeOfTroop;
-import spaceraze.world.report.landbattle.EnemyTroop;
-import spaceraze.world.report.landbattle.OwnTroop;
-import spaceraze.world.report.landbattle.TroopState;
+import spaceraze.game.report.landbattle.EnemyTroop;
+import spaceraze.game.report.landbattle.OwnTroop;
+import spaceraze.game.report.landbattle.TroopState;
 
 public class LandBattle {
 	private String planetName;
@@ -30,8 +31,9 @@ public class LandBattle {
 	private LandBattleGroup attBG;
 	private GameWorld gameWorld;
     private GalaxyMap galaxyMap;
+	private Galaxy galaxy;
 	
-	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistance, int currentTurn, GameWorld gameWorld, GalaxyMap galaxyMap){
+	public LandBattle(List<TaskForceTroop> defendingTaskForceTroops, List<TaskForceTroop> attackingTaskForceTroops, String planetName, int resistance, int currentTurn, GameWorld gameWorld, GalaxyMap galaxyMap, Galaxy galaxy){
 		// create battle groups
     	this.defBG = new LandBattleGroup(defendingTaskForceTroops, gameWorld);
     	this.attBG = new LandBattleGroup(attackingTaskForceTroops, gameWorld);
@@ -41,6 +43,7 @@ public class LandBattle {
 		this.currentTurn = currentTurn;
 		this.gameWorld = gameWorld;
         this.galaxyMap = galaxyMap;
+		this.galaxy = galaxy;
 	}
 	
 	public void performBattle(){
@@ -108,7 +111,7 @@ public class LandBattle {
 	}
 	
 	
-	private spaceraze.world.report.landbattle.LandBattleReport createReport(LandBattleGroup ownLandBattleGroup, LandBattleGroup enemyLandBattleGroup, Collection<OwnTroop> ownTroops, Collection<EnemyTroop> enemyTroops, boolean isDefending) {
+	private spaceraze.game.report.landbattle.LandBattleReport createReport(LandBattleGroup ownLandBattleGroup, LandBattleGroup enemyLandBattleGroup, Collection<OwnTroop> ownTroops, Collection<EnemyTroop> enemyTroops, boolean isDefending) {
     	if(ownLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null) { // no player is the same as Neutral or a simulation.
     		return null;
     	}
@@ -116,7 +119,7 @@ public class LandBattle {
     	List<EnemyTroop> enemyTroops1 = new ArrayList<>(enemyTroops);
 		String enemyName = enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null ? null : enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner().getName();
 		String enemyFaction = enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner() == null ? null : GameWorldHandler.getFactionByUuid(enemyLandBattleGroup.getTroops().get(0).getTroop().getOwner().getFactionUuid(), gameWorld).getName();
-		return new spaceraze.world.report.landbattle.LandBattleReport(ownTroops1, enemyTroops1, enemyName, enemyFaction, isDefending);
+		return new spaceraze.game.report.landbattle.LandBattleReport(ownTroops1, enemyTroops1, enemyName, enemyFaction, isDefending);
 		
 	}
 	
@@ -133,7 +136,7 @@ public class LandBattle {
 	private void performAttacks(List<LandBattleAttack> attackList){
 		for (LandBattleAttack attack : attackList) {
 			Logger.finer("***** " + attack.toString() + " *****");
-			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()), gameWorld, galaxyMap);
+			attack.performAttack(attBG,defBG, getVIPBonus(attBG.getTroops()), getVIPBonus(defBG.getTroops()), gameWorld, galaxyMap, galaxy);
 		}
 	}
 	

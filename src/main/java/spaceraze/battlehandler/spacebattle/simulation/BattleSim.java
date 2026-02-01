@@ -13,9 +13,9 @@ import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Spaceship;
+import spaceraze.game.Spaceship;
 import spaceraze.world.SpaceshipType;
-import spaceraze.world.VIP;
+import spaceraze.game.VIP;
 import spaceraze.battlehandler.spacebattle.TaskForce;
 import spaceraze.battlehandler.spacebattle.TaskForceSpaceShip;
 
@@ -58,7 +58,7 @@ public class BattleSim extends Thread {
 			sst = gameWorld.getSpaceshipTypeByShortName(typeName);
 		}
 		if (sst != null) {
-			Spaceship ss = sst.getShip(0, techBonus, 0, 0);
+			Spaceship ss = new Spaceship(sst, null, 0, techBonus, 0,0);
 			/// TODO 2019-12-07 undersök varför detta är avmarkerat? Var det så att vi gjorde
 			// om och skeppen inte längre kan ändra screened? Testa i klienten och se om det
 			// går att screena ett skepp.
@@ -81,10 +81,9 @@ public class BattleSim extends Thread {
 	private static List<VIP> createSpaceshipVips(GameWorld gameWorld, List<String> vipNames) {
 		return vipNames.stream()
 				.map(vipName -> VipMutator.getNewVIPShortName(vipName, gameWorld) != null
-						? VipMutator.getNewVIPShortName(vipName, gameWorld) : VipMutator.getNewVIP(vipName, gameWorld))
-				.collect(Collectors.toList());
+						? VipMutator.getNewVIPShortName(vipName, gameWorld) : VipMutator.getNewVIP(vipName, gameWorld)).toList();
 	}
-	
+
 	private static String addShips(TaskForce tf, GameWorld gameWorld, String ships) {
 		StringTokenizer st = new StringTokenizer(ships, ";");
 		String message = null;

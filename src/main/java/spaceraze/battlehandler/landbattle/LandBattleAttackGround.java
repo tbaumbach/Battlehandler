@@ -2,15 +2,16 @@ package spaceraze.battlehandler.landbattle;
 
 import java.util.List;
 
+import spaceraze.game.Galaxy;
 import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Troop;
+import spaceraze.game.Troop;
 import spaceraze.world.enums.LandBattleAttackType;
-import spaceraze.world.report.landbattle.*;
+import spaceraze.game.report.landbattle.*;
 
 public class LandBattleAttackGround extends LandBattleAttack {
 	private TaskForceTroop attacker;
@@ -23,7 +24,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 	}
  
 	@Override
-	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap) {
+	public void performAttack(LandBattleGroup attBG, LandBattleGroup defBG, int attVipBonus, int defVipBonus, GameWorld gameWorld, GalaxyMap galaxyMap, Galaxy galaxy) {
 		Logger.finer("performAttack(ground)");
 		if (TroopPureFunctions.isDestroyed(attacker.getTroop())){
 			Logger.finer("Attacker already destroyed");
@@ -53,7 +54,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				Logger.finer("attackerActualDamage: " + attackerActualDamage);
 				int defenderActualDamage = getActualDamage(targetTroop.getTroop(), TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).isArmor(), defMultiplier, !defender, resistance, defVIPBonus);
 				Logger.finer("defenderActualDamage: " + defenderActualDamage);
-				String result1 = TroopMutator.hit(targetTroop.getTroop(), attackerActualDamage, false, !defender, resistance, galaxyMap);
+				String result1 = TroopMutator.hit(targetTroop.getTroop(), attackerActualDamage, false, !defender, resistance, galaxyMap, gameWorld, galaxy);
 				Logger.finer(targetTroop.getTroop().getName() + ": " + result1);
 				if (TroopPureFunctions.isDestroyed(targetTroop.getTroop())){
 					TroopMutator.addKill(attacker.getTroop());
@@ -63,7 +64,7 @@ public class LandBattleAttackGround extends LandBattleAttack {
 					//attacker.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
 					//targetTroop.getTroop().addToLatestTroopsLostInSpace(targetTroop.getTroop());
 				}
-				String result2 = TroopMutator.hit(attacker.getTroop(), defenderActualDamage, false, defender, resistance, galaxyMap);
+				String result2 = TroopMutator.hit(attacker.getTroop(), defenderActualDamage, false, defender, resistance, galaxyMap, gameWorld, galaxy);
 				Logger.finer(attacker.getTroop().getName() + ": " + result2);
 				if (TroopPureFunctions.isDestroyed(attacker.getTroop())){
 					TroopMutator.addKill(targetTroop.getTroop());
@@ -109,8 +110,8 @@ public class LandBattleAttackGround extends LandBattleAttack {
 		return TroopPureFunctions.getModifiedActualDamage(troop, baseDamage, multiplier, defender, resistance, vipBonus);
 	}
 
-	public static spaceraze.world.report.landbattle.LandBattleAttack getLandBattleAttackForAttackTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery, GameWorld gameWorld) {
-		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
+	public static spaceraze.game.report.landbattle.LandBattleAttack getLandBattleAttackForAttackTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery, GameWorld gameWorld) {
+		return spaceraze.game.report.landbattle.LandBattleAttack.builder()
 				.troopAttack(TroopAttack.builder()
 						.name(attacker.getTroop().getName())
 						.typeName(TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).getName())
@@ -131,8 +132,8 @@ public class LandBattleAttackGround extends LandBattleAttack {
 				.build();
 	}
 
-	public static spaceraze.world.report.landbattle.LandBattleAttack createLandBattleAttackForDefendingTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery, GameWorld gameWorld) {
-		return spaceraze.world.report.landbattle.LandBattleAttack.builder()
+	public static spaceraze.game.report.landbattle.LandBattleAttack createLandBattleAttackForDefendingTroop(TaskForceTroop attacker, TaskForceTroop targetTroop, int attMultiplier, int defMultiplier, int attackerActualDamage, int defenderActualDamage, boolean isArtillery, GameWorld gameWorld) {
+		return spaceraze.game.report.landbattle.LandBattleAttack.builder()
 				.troopAttack(TroopAttack.builder()
 						.typeName(TroopPureFunctions.getTroopTypeByUuid(attacker.getTroop().getTypeUuid(), gameWorld).getName())
 						.damageCapacity(attacker.getTroop().getDamageCapacity())

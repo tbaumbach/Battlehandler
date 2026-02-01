@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import spaceraze.world.Troop;
-import spaceraze.world.VIP;
+import spaceraze.game.Troop;
+import spaceraze.game.VIP;
 
 public class TaskForceTroop implements Serializable, Cloneable {
 	static final long serialVersionUID = 1L;

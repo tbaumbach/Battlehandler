@@ -7,12 +7,12 @@ import java.util.List;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Troop;
+import spaceraze.game.Troop;
 import spaceraze.world.enums.BattleGroupPosition;
 import spaceraze.world.enums.LandBattleAttackType;
 import spaceraze.world.enums.TroopTargetingType;
 import spaceraze.world.enums.TypeOfTroop;
-import spaceraze.world.report.landbattle.LandBattleReport;
+import spaceraze.game.report.landbattle.LandBattleReport;
 
 public class LandBattleGroup {
 	private List<TaskForceTroop> troops;

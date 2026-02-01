@@ -14,11 +14,11 @@ import spaceraze.servlethelper.game.spaceship.SpaceshipMutator;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.util.general.Functions;
 import spaceraze.util.general.Logger;
-import spaceraze.world.Galaxy;
+import spaceraze.game.Galaxy;
 import spaceraze.world.GameWorld;
 import spaceraze.world.enums.InitiativeMethod;
 import spaceraze.world.enums.SpaceShipSize;
-import spaceraze.world.report.spacebattle.*;
+import spaceraze.game.report.spacebattle.*;
 
 public class SpaceBattlePerformer {
 	
@@ -77,7 +77,7 @@ public class SpaceBattlePerformer {
 	          }
 	          tf1status = tf1.getStatus();
 	          if (firingShip != null){ // tf2 är beskjutet
-	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2, gameWorld, galaxyMap);
+	            tf2status = tf2.shipHit(tf1, firingShip, r, attackReport1, attackReport2, gameWorld, galaxyMap, galaxy);
 	          }else{   // om inget skepp returneras betyder det att tf1 håller på att retirera
 	            tf2status = FIGHTING;
 	          }
@@ -85,7 +85,7 @@ public class SpaceBattlePerformer {
 	          firingShip = getFiringShip(tf2, tf1, r, attackReport2, attackReport1, gameWorld, galaxy, galaxyMap);
 	          tf2status = tf2.getStatus();
 	          if (firingShip != null){ // tf1 är beskjutet
-	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1, gameWorld, galaxyMap);
+	            tf1status = tf1.shipHit(tf2, firingShip, r, attackReport2, attackReport1, gameWorld, galaxyMap, galaxy);
 	          }else{   // om inget skepp returneras betyder det att tf2 håller på att retirera
 	            tf1status = FIGHTING;
 	          }
@@ -243,11 +243,11 @@ public class SpaceBattlePerformer {
 			firingShip = attackerTF.getAllSpaceShips().get(Math.abs(r.nextInt())%attackerTF.getAllSpaceShips().size());
         }
         
-        if (attackerTF.isRunningAway() && SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy).canMove()){ // tempss försöker fly
+        if (attackerTF.isRunningAway() && SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy, gameWorld).canMove()){ // tempss försöker fly
       	activeAttackReport.setWantsToRetreat(true);
       	targetAttackReport.setWantsToRetreat(true);
           if (!opponentTF.stopsRetreats()){ // tempss flyr
-			  boolean gotAway = SpaceshipMutator.retreat(firingShip.getSpaceship(), TaskForce.getRandomClosestPlanet(attackerTF, SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy)), gameWorld);
+			  boolean gotAway = SpaceshipMutator.retreat(firingShip.getSpaceship(), TaskForce.getRandomClosestPlanet(attackerTF, SpaceshipPureFunctions.getRange(firingShip.getSpaceship(), galaxy, gameWorld)), gameWorld);
         	attackerTF.getAllSpaceShips().remove(firingShip);
             if (firingShip.getSpaceship().getSquadronCapacity() > 0){
             	attackerTF.removeSquadronsFromCarrier(firingShip.getSpaceship());
@@ -282,7 +282,7 @@ public class SpaceBattlePerformer {
       }
 
     
-    private spaceraze.world.report.spacebattle.SpaceBattleReport createReport(TaskForce ownTaskForce, TaskForce enemyTaskForce, Collection<OwnSpaceship> ownSpaceships, Collection<EnemySpaceship> enemySpaceships) {
+    private spaceraze.game.report.spacebattle.SpaceBattleReport createReport(TaskForce ownTaskForce, TaskForce enemyTaskForce, Collection<OwnSpaceship> ownSpaceships, Collection<EnemySpaceship> enemySpaceships) {
     	if(ownTaskForce.getPlayerName() == null) { // no player is the same as Neutral or a simulation.
     		return null;
     	}
@@ -290,7 +290,7 @@ public class SpaceBattlePerformer {
     	List<EnemySpaceship> enemySpaceships1 = new ArrayList<>(enemySpaceships);
 		String enemyName = enemyTaskForce.getPlayerName();
 		String enemyFaction = enemyTaskForce.getPlayerName() == null ? null : enemyTaskForce.getFactionName();
-		return new spaceraze.world.report.spacebattle.SpaceBattleReport(ownSpaceships1, enemySpaceships1, enemyName, enemyFaction);
+		return new spaceraze.game.report.spacebattle.SpaceBattleReport(ownSpaceships1, enemySpaceships1, enemyName, enemyFaction);
 		
 	}
     

@@ -10,15 +10,16 @@ import java.util.StringTokenizer;
 
 import spaceraze.battlehandler.landbattle.LandBattle;
 import spaceraze.battlehandler.landbattle.TaskForceTroop;
+import spaceraze.game.Galaxy;
 import spaceraze.map.GalaxyMap;
 import spaceraze.servlethelper.game.troop.TroopMutator;
 import spaceraze.servlethelper.game.troop.TroopPureFunctions;
 import spaceraze.servlethelper.game.vip.VipMutator;
 import spaceraze.util.general.Logger;
 import spaceraze.world.GameWorld;
-import spaceraze.world.Troop;
+import spaceraze.game.Troop;
 import spaceraze.world.TroopType;
-import spaceraze.world.VIP;
+import spaceraze.game.VIP;
 
 /**
  * @author WMPABOD
@@ -43,11 +44,13 @@ public class BattleSimLand extends Thread {
     private boolean showTrace;
     private int planetResistance;
     private GalaxyMap galaxyMap;
+    private Galaxy galaxy;
 
-    public BattleSimLand(BattleSimLandListener aBattleSimLandListener, GameWorld aGameWorld, GalaxyMap galaxyMap) {
+    public BattleSimLand(BattleSimLandListener aBattleSimLandListener, GameWorld aGameWorld, GalaxyMap galaxyMap, Galaxy galaxy) {
         this.battleSimLandListener = aBattleSimLandListener;
         this.gameWorld = aGameWorld;
         this.galaxyMap = galaxyMap;
+        this.galaxy = galaxy;
 
         //battleSimMap = createMap();
     }
@@ -233,7 +236,7 @@ public class BattleSimLand extends Thread {
 						countWinsPlayer1++;
 					} else {
 						// perform land battle
-						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn, gameWorld, galaxyMap);
+						LandBattle battle = new LandBattle(defTroops, attTroops, BATTLEPLANET_NAME, planetResistance, currentTurn, gameWorld, galaxyMap, galaxy);
 						battle.performBattle();
 						currentTurn++;
 					}

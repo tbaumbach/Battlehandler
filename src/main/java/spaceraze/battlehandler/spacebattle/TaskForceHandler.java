@@ -5,9 +5,10 @@ import spaceraze.servlethelper.game.planet.PlanetPureFunctions;
 import spaceraze.servlethelper.game.spaceship.SpaceshipPureFunctions;
 import spaceraze.servlethelper.handlers.GameWorldHandler;
 import spaceraze.util.move.FindPlanetCriterion;
-import spaceraze.world.Galaxy;
-import spaceraze.world.Planet;
-import spaceraze.world.Player;
+import spaceraze.game.Galaxy;
+import spaceraze.game.Planet;
+import spaceraze.game.Player;
+import spaceraze.world.GameWorld;
 import spaceraze.world.enums.SpaceshipRange;
 
 import java.util.ArrayList;
@@ -18,10 +19,10 @@ public class TaskForceHandler {
 
     private TaskForceHandler(){}
 
-    public static List<TaskForce> getTaskForces(Planet aPlanet, boolean includeCivilians, Galaxy galaxy) {
+    public static List<TaskForce> getTaskForces(Planet aPlanet, boolean includeCivilians, Galaxy galaxy, GameWorld gameWorld) {
         List<TaskForce> taskforces = new LinkedList<TaskForce>();
         // get all neutral ships at aPlanet
-        TaskForce neutraltf = getTaskForce(null, aPlanet, includeCivilians, galaxy);
+        TaskForce neutraltf = getTaskForce(null, aPlanet, includeCivilians, galaxy, gameWorld);
         if (neutraltf != null) {
             taskforces.add(neutraltf);
         }
@@ -29,7 +30,7 @@ public class TaskForceHandler {
         for (Player player : galaxy.getPlayers()) {
             // LoggingHandler.fine(this,this,"getTaskforces","Player loop: " +
             // tempplayer.getName());
-            TaskForce temptf = getTaskForce(player, aPlanet, includeCivilians, galaxy);
+            TaskForce temptf = getTaskForce(player, aPlanet, includeCivilians, galaxy, gameWorld);
             if (temptf != null) {
                 // LoggingHandler.finer(this,this,"getTaskforces","TaskForce added: " +
                 // temptf.getTotalNrShips(true));
@@ -39,17 +40,17 @@ public class TaskForceHandler {
         return taskforces;
     }
 
-    public static TaskForce getTaskForce(Player aPlayer, Planet aPlanet, boolean includeCivilians, Galaxy galaxy) {
+    public static TaskForce getTaskForce(Player aPlayer, Planet aPlanet, boolean includeCivilians, Galaxy galaxy, GameWorld gameWorld) {
         // TODO 2019-12-07 Säkra att VIPar på troops eller planet inte kan påverka
         // striden. VIPar som inte har egeneskaper som påverkar troops borde inte kunna
         // vara på en troop.
         List<TaskForceSpaceShip> taskForceSpaceShips = new ArrayList<>();
         SpaceshipPureFunctions.getPlayersSpaceshipsOnPlanet(aPlayer, aPlanet, galaxy.getSpaceships()).stream()
-                .filter(spaceship -> (!SpaceshipPureFunctions.getSpaceshipTypeByUuid(spaceship.getTypeUuid(), galaxy.getGameWorld()).isCivilian() || includeCivilians))
+                .filter(spaceship -> (!SpaceshipPureFunctions.getSpaceshipTypeByUuid(spaceship.getTypeUuid(), gameWorld).isCivilian() || includeCivilians))
                 .forEach(spaceship -> taskForceSpaceShips
                         .add(new TaskForceSpaceShip(spaceship, VipPureFunctions.findAllVIPsOnShip(spaceship, galaxy.getAllVIPs()))));
 
-        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? GameWorldHandler.getFactionByUuid(aPlayer.getFactionUuid(), galaxy.getGameWorld()).getName() : null, taskForceSpaceShips);
+        TaskForce tf = new TaskForce(aPlayer != null ? aPlayer.getGovernorName() : null, aPlayer != null ? GameWorldHandler.getFactionByUuid(aPlayer.getFactionUuid(), gameWorld).getName() : null, taskForceSpaceShips);
 
         if (tf.getTotalNrShips() == 0) { // om inga skepp returnera null = finns ingen taskforce
             return null;
